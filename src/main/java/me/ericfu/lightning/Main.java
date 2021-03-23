@@ -4,6 +4,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.ericfu.lightning.conf.ConfReader;
 import me.ericfu.lightning.exception.IncompatibleSchemaException;
 import me.ericfu.lightning.exception.InvalidConfigException;
+import me.ericfu.lightning.pipeline.Pipeline;
+import me.ericfu.lightning.pipeline.PipelineResult;
 import me.ericfu.lightning.schema.BasicType;
 import me.ericfu.lightning.schema.Field;
 import me.ericfu.lightning.schema.RecordBatchConvertor;

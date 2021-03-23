@@ -1,4 +1,4 @@
-package me.ericfu.lightning;
+package me.ericfu.lightning.pipeline;
 
 /**
  * Result summary of a pipeline

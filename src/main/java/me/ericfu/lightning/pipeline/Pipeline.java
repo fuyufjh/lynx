@@ -1,4 +1,4 @@
-package me.ericfu.lightning;
+package me.ericfu.lightning.pipeline;
 
 import me.ericfu.lightning.data.RecordBatch;
 import me.ericfu.lightning.schema.RecordBatchConvertor;
