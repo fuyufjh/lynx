@@ -1,11 +1,14 @@
 package me.ericfu.lightning.conf;
 
-import me.ericfu.lightning.exception.InvalidConfigException;
+import org.hibernate.validator.constraints.Range;
 
-public final class GeneralConf implements Conf {
+@Kind("general")
+public final class GeneralConf extends Conf {
 
+    @Range(min = 1, max = 10000000)
     private int batchSize = 10000;
 
+    @Range(min = 1, max = 1024)
     private int threads = 16;
 
     public void setBatchSize(int batchSize) {
@@ -22,10 +25,5 @@ public final class GeneralConf implements Conf {
 
     public void setThreads(int threads) {
         this.threads = threads;
-    }
-
-    @Override
-    public void validate() throws InvalidConfigException {
-        // do nothing
     }
 }

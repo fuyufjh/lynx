@@ -1,6 +1,7 @@
 package me.ericfu.lightning;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import me.ericfu.lightning.conf.ConfReader;
 import me.ericfu.lightning.exception.IncompatibleSchemaException;
 import me.ericfu.lightning.exception.InvalidConfigException;
 import me.ericfu.lightning.schema.BasicType;
@@ -61,7 +62,7 @@ public class Main {
             return;
         }
 
-        ConfigReader conf = new ConfigReader(new File(confPath));
+        ConfReader conf = new ConfReader(new File(confPath));
         try {
             conf.readConfig();
         } catch (InvalidConfigException e) {

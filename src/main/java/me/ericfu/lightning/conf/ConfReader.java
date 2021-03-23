@@ -1,15 +1,10 @@
-package me.ericfu.lightning;
+package me.ericfu.lightning.conf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
-import me.ericfu.lightning.conf.Conf;
-import me.ericfu.lightning.conf.GeneralConf;
-import me.ericfu.lightning.conf.Kind;
-import me.ericfu.lightning.conf.SinkConf;
-import me.ericfu.lightning.conf.SourceConf;
 import me.ericfu.lightning.exception.InvalidConfigException;
 import org.reflections.Reflections;
 
@@ -17,7 +12,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
-public class ConfigReader {
+public class ConfReader {
 
     private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
@@ -35,7 +30,7 @@ public class ConfigReader {
     private SourceConf sourceConf;
     private SinkConf sinkConf;
 
-    public ConfigReader(File confFile) {
+    public ConfReader(File confFile) {
         this.confFile = confFile;
     }
 
@@ -53,7 +48,7 @@ public class ConfigReader {
         }
     }
 
-    private void readGeneralConf(JsonNode root) throws JsonProcessingException {
+    private void readGeneralConf(JsonNode root) throws InvalidConfigException, JsonProcessingException {
         JsonNode general = root.get(GENERAL);
         if (general != null) {
             generalConf = mapper.treeToValue(general, GeneralConf.class);
@@ -61,6 +56,7 @@ public class ConfigReader {
             // Just use default general conf
             generalConf = new GeneralConf();
         }
+        generalConf.validate();
     }
 
     private void readSourceConf(JsonNode root) throws InvalidConfigException, JsonProcessingException {

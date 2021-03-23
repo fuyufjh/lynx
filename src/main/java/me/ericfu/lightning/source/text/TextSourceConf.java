@@ -2,7 +2,8 @@ package me.ericfu.lightning.source.text;
 
 import me.ericfu.lightning.conf.Kind;
 import me.ericfu.lightning.conf.SourceConf;
-import me.ericfu.lightning.exception.InvalidConfigException;
+
+import javax.validation.constraints.NotEmpty;
 
 @Kind("text")
 public class TextSourceConf extends SourceConf {
@@ -10,11 +11,13 @@ public class TextSourceConf extends SourceConf {
     /**
      * path to the directory or file
      */
+    @NotEmpty
     private String path;
 
     /**
      * column separator
      */
+    @NotEmpty
     private String separator = ",";
 
     public String getPath() {
@@ -31,12 +34,5 @@ public class TextSourceConf extends SourceConf {
 
     public void setSeparator(String separator) {
         this.separator = separator;
-    }
-
-    @Override
-    public void validate() throws InvalidConfigException {
-        if (path == null) {
-            throw new InvalidConfigException("path is required");
-        }
     }
 }

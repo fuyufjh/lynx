@@ -1,5 +1,5 @@
 package me.ericfu.lightning.conf;
 
-public abstract class SourceConf implements Conf {
+public abstract class SourceConf extends Conf {
 
 }

@@ -2,7 +2,8 @@ package me.ericfu.lightning.source.random;
 
 import me.ericfu.lightning.conf.Kind;
 import me.ericfu.lightning.conf.SourceConf;
-import me.ericfu.lightning.exception.InvalidConfigException;
+
+import javax.validation.constraints.Positive;
 
 @Kind("random")
 public class RandomSourceConf extends SourceConf {
@@ -10,6 +11,7 @@ public class RandomSourceConf extends SourceConf {
     /**
      * Total number of records
      */
+    @Positive
     private int records = 10000;
 
     /**
@@ -31,10 +33,5 @@ public class RandomSourceConf extends SourceConf {
 
     public void setAutoIncrementKey(String autoIncrementKey) {
         this.autoIncrementKey = autoIncrementKey;
-    }
-
-    @Override
-    public void validate() throws InvalidConfigException {
-        // do nothing
     }
 }

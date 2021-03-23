@@ -2,14 +2,20 @@ package me.ericfu.lightning.sink.jdbc;
 
 import me.ericfu.lightning.conf.Kind;
 import me.ericfu.lightning.conf.SinkConf;
-import me.ericfu.lightning.exception.InvalidConfigException;
+
+import javax.validation.constraints.NotEmpty;
 
 @Kind("jdbc")
 public class JdbcSinkConf extends SinkConf {
 
+    @NotEmpty
     private String url;
+
     private String user;
+
     private String password;
+
+    @NotEmpty
     private String table;
 
     public String getUrl() {
@@ -42,14 +48,5 @@ public class JdbcSinkConf extends SinkConf {
 
     public void setTable(String table) {
         this.table = table;
-    }
-
-    @Override
-    public void validate() throws InvalidConfigException {
-        if (url == null) {
-            throw new InvalidConfigException("url should not be null");
-        } else if (table == null) {
-            throw new InvalidConfigException("table should not be null");
-        }
     }
 }
