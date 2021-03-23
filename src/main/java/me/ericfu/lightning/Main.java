@@ -2,36 +2,26 @@ package me.ericfu.lightning;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.ericfu.lightning.conf.ConfReader;
-import me.ericfu.lightning.exception.IncompatibleSchemaException;
 import me.ericfu.lightning.exception.InvalidConfigException;
 import me.ericfu.lightning.pipeline.Pipeline;
 import me.ericfu.lightning.pipeline.PipelineResult;
 import me.ericfu.lightning.schema.RecordBatchConvertor;
 import me.ericfu.lightning.schema.RecordConvertor;
 import me.ericfu.lightning.schema.RecordType;
-import me.ericfu.lightning.schema.SchemaUtils;
 import me.ericfu.lightning.sink.SchemalessSink;
 import me.ericfu.lightning.sink.Sink;
 import me.ericfu.lightning.sink.SinkFactory;
 import me.ericfu.lightning.source.SchemalessSource;
 import me.ericfu.lightning.source.Source;
 import me.ericfu.lightning.source.SourceFactory;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
+import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
@@ -116,17 +106,11 @@ public class Main {
             sinkSchema = sink.getSchema();
         }
 
-        // Combine source and sink schema
-        RecordType combinedSchema;
-        try {
-            combinedSchema = SchemaUtils.combine(sourceSchema, sinkSchema);
-        } catch (IncompatibleSchemaException e) {
-            logger.error("schema source and sink not compatible");
-            return;
-        }
+        logger.info("Data source schema: " + sourceSchema.toString());
+        logger.info("Data sink schema: " + sinkSchema.toString());
 
-        // Convert source data to the unified schema
-        RecordConvertor recordConvertor = new RecordConvertor(sourceSchema, combinedSchema);
+        // Convert source data to sink schema
+        RecordConvertor recordConvertor = new RecordConvertor(sourceSchema, sinkSchema);
         RecordBatchConvertor batchConvertor = new RecordBatchConvertor(recordConvertor);
 
         /*----------------------------------------------------------
@@ -137,7 +121,7 @@ public class Main {
             conf.getGeneralConf().getThreads(),
             1, TimeUnit.SECONDS,
             new SynchronousQueue<>(),
-            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("pipeline-%d").build());
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("Pipeline-%d").build());
 
         // fatalError also helps stop all threads when a fatal error happens on one of the threads
         AtomicReference<Throwable> fatalError = new AtomicReference<>();

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * RecordType contains an ordered list of fields(columns)
@@ -41,5 +42,12 @@ public class RecordType {
 
     public List<Field> getFields() {
         return fields;
+    }
+
+    @Override
+    public String toString() {
+        return fields.stream()
+                .map(f -> f.getName() + " " + f.getType())
+                .collect(Collectors.joining(", ", "[", "]"));
     }
 }

@@ -6,11 +6,7 @@ import me.ericfu.lightning.exception.DataSinkException;
 import me.ericfu.lightning.schema.Field;
 import me.ericfu.lightning.sink.SinkWriter;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 
 public class JdbcSinkWriter implements SinkWriter {
 
@@ -37,9 +33,9 @@ public class JdbcSinkWriter implements SinkWriter {
     public void writeBatch(RecordBatch batch) throws DataSinkException {
         try {
             for (Record record : batch) {
-                for (int i = 0; i < record.getType().getFieldCount(); i++) {
+                for (int i = 0; i < s.schema.getFieldCount(); i++) {
                     final Object value = record.getValue(i);
-                    final Field field = record.getType().getField(i);
+                    final Field field = s.schema.getField(i);
                     setFieldValue(i + 1, field, value);
                 }
                 ps.addBatch();

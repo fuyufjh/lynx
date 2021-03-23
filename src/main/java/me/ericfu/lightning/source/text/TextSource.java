@@ -10,6 +10,8 @@ import me.ericfu.lightning.schema.RecordTypeBuilder;
 import me.ericfu.lightning.source.SchemalessSource;
 import me.ericfu.lightning.source.SourceReader;
 
+import java.io.File;
+
 public class TextSource implements SchemalessSource {
 
     final GeneralConf globals;
@@ -40,7 +42,10 @@ public class TextSource implements SchemalessSource {
 
     @Override
     public void init() throws DataSourceException {
-        // do nothing
+        // Check file existence
+        if (!new File(conf.getPath()).exists()) {
+            throw new DataSourceException("File or folder '" + conf.getPath() + "' not exist");
+        }
     }
 
     @Override
@@ -48,5 +53,3 @@ public class TextSource implements SchemalessSource {
         return new TextSourceReader(this, partNo);
     }
 }
-
-
