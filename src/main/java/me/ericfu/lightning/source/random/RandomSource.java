@@ -7,14 +7,19 @@ import me.ericfu.lightning.data.RecordBatch;
 import me.ericfu.lightning.data.RecordBatchBuilder;
 import me.ericfu.lightning.data.RecordBuilder;
 import me.ericfu.lightning.exception.DataSourceException;
+import me.ericfu.lightning.schema.Field;
 import me.ericfu.lightning.schema.RecordType;
 import me.ericfu.lightning.source.SchemalessSource;
 import me.ericfu.lightning.source.SourceReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 public class RandomSource implements SchemalessSource {
+
+    private static final Logger logger = LoggerFactory.getLogger(RandomSource.class);
 
     private static final int RANDOM_STRING_LENGTH = 20;
 
@@ -31,6 +36,9 @@ public class RandomSource implements SchemalessSource {
     @Override
     public void provideSchema(RecordType schema) {
         this.schema = schema;
+        if (schema.getField(conf.getAutoIncrementKey()) == null) {
+            logger.warn("auto-increment key '{}' not exists in schema", conf.getAutoIncrementKey());
+        }
     }
 
     @Override
@@ -45,20 +53,23 @@ public class RandomSource implements SchemalessSource {
 
     @Override
     public SourceReader createReader(int partNo) {
-        int[] splits = split(conf.getRecords(), globals.getThreads());
-        return new RandomSourceReader(splits[partNo]);
+        long[] cut = accumulate(split(conf.getRecords(), globals.getThreads()));
+        long start = partNo > 0 ? cut[partNo - 1] : 0;
+        long end = cut[partNo];
+        return new RandomSourceReader(start, end);
     }
 
     public class RandomSourceReader implements SourceReader {
 
-        private final int limit;
-        private int count;
+        private final long end;
+        private long current;
 
         private RecordBatchBuilder builder;
         private Random random;
 
-        public RandomSourceReader(int limit) {
-            this.limit = limit;
+        public RandomSourceReader(long start, long end) {
+            this.current = start;
+            this.end = end;
         }
 
         @Override
@@ -69,7 +80,7 @@ public class RandomSource implements SchemalessSource {
 
         @Override
         public RecordBatch readBatch() throws DataSourceException {
-            for (int i = 0; i < globals.getBatchSize() && count < limit; i++, count++) {
+            for (int i = 0; i < globals.getBatchSize() && current < end; i++, current++) {
                 builder.addRow(buildRandomRecord());
             }
 
@@ -83,7 +94,13 @@ public class RandomSource implements SchemalessSource {
         private Record buildRandomRecord() {
             RecordBuilder builder = new RecordBuilder(schema);
             for (int i = 0; i < schema.getFieldCount(); i++) {
-                switch (schema.getField(i).getType()) {
+                final Field field = schema.getField(i);
+                if (conf.getAutoIncrementKey().equals(field.getName())) {
+                    // set auto-increment column to current record number
+                    builder.set(i, current);
+                    continue;
+                }
+                switch (field.getType()) {
                 case INT64:
                     builder.set(i, (long) random.nextInt());
                     break;
@@ -117,13 +134,20 @@ public class RandomSource implements SchemalessSource {
         }
     }
 
-    private static int[] split(int x, int n) {
-        int[] result = new int[n];
-        int r = n - (x % n);
-        int d = x / n;
+    private static long[] split(long x, int n) {
+        long[] result = new long[n];
+        long r = n - (x % n);
+        long d = x / n;
         for (int i = 0; i < n; i++) {
             result[i] = i >= r ? d + 1 : d;
         }
         return result;
+    }
+
+    private static long[] accumulate(long[] values) {
+        for (int i = 1; i < values.length; i++) {
+            values[i] += values[i - 1];
+        }
+        return values;
     }
 }

@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
 
@@ -119,22 +120,27 @@ public class Main {
             new SynchronousQueue<>(),
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("worker-%d").build());
 
-        List<Future<?>> futures = new ArrayList<>();
+        AtomicReference<Throwable> fatalError = new AtomicReference<>();
+        List<Future<PipelineResult>> futures = new ArrayList<>();
         for (int i = 0; i < conf.getGeneralConf().getThreads(); i++) {
-            Pipeline task = new Pipeline(i, source.createReader(i), sink.createWriter(i), batchConvertor);
-            Future<?> future = threadPool.submit(task);
-            futures.add(future);
+            Pipeline task = new Pipeline(i, source.createReader(i), sink.createWriter(i), batchConvertor, fatalError);
+            futures.add(threadPool.submit(task));
         }
 
         logger.info("All pipelines started");
-        try {
-            for (Future<?> future : futures) {
-                future.get();
+
+        List<PipelineResult> results = new ArrayList<>();
+        for (Future<PipelineResult> future : futures) {
+            try {
+                results.add(future.get());
+            } catch (InterruptedException | ExecutionException ex) {
+                logger.error("Fatal error", ex);
+                return;
             }
-        } catch (InterruptedException | ExecutionException ex) {
-            logger.error("transfer failed", ex);
-            return;
         }
+
+        long totalRecords = results.stream().mapToLong(PipelineResult::getRecords).sum();
+        logger.info("All pipelines completed. {} records transferred in total", totalRecords);
 
         threadPool.shutdown();
         logger.info("Bye!");

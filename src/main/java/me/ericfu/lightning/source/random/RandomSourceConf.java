@@ -10,12 +10,25 @@ public class RandomSourceConf extends SourceConf {
      */
     private int records = 10000;
 
+    /**
+     * Auto-increment columns will be filled with auto-increment integer values instead of random
+     */
+    private String autoIncrementKey = "";
+
     public int getRecords() {
         return records;
     }
 
     public void setRecords(int records) {
         this.records = records;
+    }
+
+    public String getAutoIncrementKey() {
+        return autoIncrementKey;
+    }
+
+    public void setAutoIncrementKey(String autoIncrementKey) {
+        this.autoIncrementKey = autoIncrementKey;
     }
 
     @Override
