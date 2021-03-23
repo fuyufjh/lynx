@@ -1,8 +1,10 @@
 package me.ericfu.lightning.sink.jdbc;
 
+import me.ericfu.lightning.conf.Kind;
 import me.ericfu.lightning.conf.SinkConf;
 import me.ericfu.lightning.exception.InvalidConfigException;
 
+@Kind("jdbc")
 public class JdbcSinkConf extends SinkConf {
 
     private String url;

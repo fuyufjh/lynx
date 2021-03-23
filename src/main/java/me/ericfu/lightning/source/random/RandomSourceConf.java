@@ -1,8 +1,10 @@
 package me.ericfu.lightning.source.random;
 
+import me.ericfu.lightning.conf.Kind;
 import me.ericfu.lightning.conf.SourceConf;
 import me.ericfu.lightning.exception.InvalidConfigException;
 
+@Kind("random")
 public class RandomSourceConf extends SourceConf {
 
     /**

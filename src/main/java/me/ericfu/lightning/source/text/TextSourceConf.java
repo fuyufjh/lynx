@@ -1,8 +1,10 @@
 package me.ericfu.lightning.source.text;
 
+import me.ericfu.lightning.conf.Kind;
 import me.ericfu.lightning.conf.SourceConf;
 import me.ericfu.lightning.exception.InvalidConfigException;
 
+@Kind("text")
 public class TextSourceConf extends SourceConf {
 
     /**

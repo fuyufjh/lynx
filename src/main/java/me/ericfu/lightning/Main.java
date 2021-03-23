@@ -65,7 +65,7 @@ public class Main {
         try {
             conf.readConfig();
         } catch (InvalidConfigException e) {
-            logger.error("invalid config: {}", e.getMessage());
+            logger.error("Invalid config: {}", e.getMessage());
             return;
         }
 

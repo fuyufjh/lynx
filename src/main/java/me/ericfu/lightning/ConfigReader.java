@@ -4,25 +4,36 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.collect.ImmutableMap;
+import me.ericfu.lightning.conf.Conf;
 import me.ericfu.lightning.conf.GeneralConf;
+import me.ericfu.lightning.conf.Kind;
 import me.ericfu.lightning.conf.SinkConf;
 import me.ericfu.lightning.conf.SourceConf;
 import me.ericfu.lightning.exception.InvalidConfigException;
-import me.ericfu.lightning.sink.jdbc.JdbcSinkConf;
-import me.ericfu.lightning.source.random.RandomSourceConf;
-import me.ericfu.lightning.source.text.TextSourceConf;
+import org.reflections.Reflections;
 
 import java.io.File;
+import java.util.Map;
+import java.util.Set;
 
 public class ConfigReader {
 
     private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
+    private static final String PACKAGE = "me.ericfu.lightning";
+
+    private static final String GENERAL = "general";
+    private static final String SOURCE = "source";
+    private static final String SINK = "sink";
+    private static final String KIND = "kind";
+    private static final String SPEC = "spec";
+
     private final File confFile;
 
     private GeneralConf generalConf;
     private SourceConf sourceConf;
-    private SinkConf sinkSpec;
+    private SinkConf sinkConf;
 
     public ConfigReader(File confFile) {
         this.confFile = confFile;
@@ -43,7 +54,7 @@ public class ConfigReader {
     }
 
     private void readGeneralConf(JsonNode root) throws JsonProcessingException {
-        JsonNode general = root.get("general");
+        JsonNode general = root.get(GENERAL);
         if (general != null) {
             generalConf = mapper.treeToValue(general, GeneralConf.class);
         } else {
@@ -53,54 +64,47 @@ public class ConfigReader {
     }
 
     private void readSourceConf(JsonNode root) throws InvalidConfigException, JsonProcessingException {
-        final JsonNode node = root.get("source");
+        final JsonNode node = root.get(SOURCE);
         if (node == null) {
             throw new InvalidConfigException("data source config not found");
-        }
-        if (node.get("kind") == null) {
+        } else if (node.get(KIND) == null) {
             throw new InvalidConfigException("kind of data source not specified");
-        }
-        if (node.get("spec") == null) {
+        } else if (node.get(SPEC) == null) {
             throw new InvalidConfigException("spec of data source not specified");
         }
 
-        String sourceKind = node.get("kind").asText();
-        switch (sourceKind.toLowerCase()) {
-        case "text":
-            sourceConf = mapper.treeToValue(node.get("spec"), TextSourceConf.class);
-            break;
-        case "random":
-            sourceConf = mapper.treeToValue(node.get("spec"), RandomSourceConf.class);
-            break;
-        default:
-            throw new InvalidConfigException("data source '" + sourceKind + "' not supported");
+        final String kind = node.get(KIND).asText();
+        Map<String, Class<? extends SourceConf>> sources = loadPlugins(SourceConf.class);
+        Class<? extends SourceConf> clazz = sources.get(kind);
+        if (clazz == null) {
+            String kinds = String.join(", ", sources.keySet());
+            throw new InvalidConfigException("unknown source kind: " + kind + ". available source kinds: " + kinds);
         }
 
-        sourceConf.validate();
+        this.sourceConf = mapper.treeToValue(node.get(SPEC), clazz);
+        this.sourceConf.validate();
     }
 
     private void readSinkConf(JsonNode root) throws InvalidConfigException, JsonProcessingException {
-        final JsonNode node = root.get("sink");
+        final JsonNode node = root.get(SINK);
         if (node == null) {
             throw new InvalidConfigException("data sink config not found");
-        }
-        if (node.get("kind") == null) {
+        } else if (node.get(KIND) == null) {
             throw new InvalidConfigException("kind of data sink not specified");
-        }
-        if (node.get("spec") == null) {
+        } else if (node.get(SPEC) == null) {
             throw new InvalidConfigException("spec of data sink not specified");
         }
 
-        String sinkKind = node.get("kind").asText();
-        switch (sinkKind.toLowerCase()) {
-        case "jdbc":
-            sinkSpec = mapper.treeToValue(node.get("spec"), JdbcSinkConf.class);
-            break;
-        default:
-            throw new InvalidConfigException("data sink '" + sinkKind + "' not supported");
+        final String kind = node.get(KIND).asText();
+        Map<String, Class<? extends SinkConf>> sinks = loadPlugins(SinkConf.class);
+        Class<? extends SinkConf> clazz = sinks.get(kind);
+        if (clazz == null) {
+            String kinds = String.join(", ", sinks.keySet());
+            throw new InvalidConfigException("unknown sink kind: " + kind + ", available sink kinds: " + kinds);
         }
 
-        sinkSpec.validate();
+        this.sinkConf = mapper.treeToValue(node.get(SPEC), clazz);
+        this.sinkConf.validate();
     }
 
     public GeneralConf getGeneralConf() {
@@ -112,7 +116,23 @@ public class ConfigReader {
     }
 
     public SinkConf getSinkConf() {
-        return sinkSpec;
+        return sinkConf;
     }
 
+    /**
+     * Get all plugins (source or sink) of given class
+     *
+     * @return a map from kind to the Source/Sink class
+     */
+    private <T extends Conf> Map<String, Class<? extends T>> loadPlugins(Class<T> clazz) {
+        Reflections reflections = new Reflections(PACKAGE);
+        Set<Class<? extends T>> subclasses = reflections.getSubTypesOf(clazz);
+
+        ImmutableMap.Builder<String, Class<? extends T>> map = ImmutableMap.builder();
+        for (Class<? extends T> c : subclasses) {
+            String kind = c.getAnnotation(Kind.class).value();
+            map.put(kind, c);
+        }
+        return map.build();
+    }
 }
