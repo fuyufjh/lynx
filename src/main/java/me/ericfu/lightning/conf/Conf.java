@@ -8,6 +8,9 @@ import javax.validation.ValidatorFactory;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Base class for any configurations
+ */
 abstract class Conf {
 
     private static final ValidatorFactory factory = Validation.buildDefaultValidatorFactory();

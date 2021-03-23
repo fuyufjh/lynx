@@ -3,6 +3,9 @@ package me.ericfu.lightning.data;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
+/**
+ * ByteString stores strings in byte array and charset
+ */
 public final class ByteString implements Comparable<ByteString> {
 
     private final byte[] buf;

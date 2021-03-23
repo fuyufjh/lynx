@@ -6,12 +6,10 @@ import me.ericfu.lightning.exception.IncompatibleSchemaException;
 import me.ericfu.lightning.exception.InvalidConfigException;
 import me.ericfu.lightning.pipeline.Pipeline;
 import me.ericfu.lightning.pipeline.PipelineResult;
-import me.ericfu.lightning.schema.BasicType;
-import me.ericfu.lightning.schema.Field;
 import me.ericfu.lightning.schema.RecordBatchConvertor;
 import me.ericfu.lightning.schema.RecordConvertor;
 import me.ericfu.lightning.schema.RecordType;
-import me.ericfu.lightning.schema.RecordTypeBuilder;
+import me.ericfu.lightning.schema.SchemaUtils;
 import me.ericfu.lightning.sink.SchemalessSink;
 import me.ericfu.lightning.sink.Sink;
 import me.ericfu.lightning.sink.SinkFactory;
@@ -43,6 +41,11 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) {
+
+        /*----------------------------------------------------------
+         * Parse Command-line Options
+         *---------------------------------------------------------*/
+
         Options options = new Options();
         options.addRequiredOption("c", "conf", true, "path to config file");
 
@@ -74,6 +77,10 @@ public class Main {
 
         logger.info("Loaded config from {}", confPath);
 
+        /*----------------------------------------------------------
+         * Construct and Initialize Source and Sink
+         *---------------------------------------------------------*/
+
         Source source = new SourceFactory().create(conf.getGeneralConf(), conf.getSourceConf());
         Sink sink = new SinkFactory().create(conf.getGeneralConf(), conf.getSinkConf());
 
@@ -84,6 +91,10 @@ public class Main {
             logger.error("Initialize source or sink failed", ex);
             return;
         }
+
+        /*----------------------------------------------------------
+         * Decide Schema and Types
+         *---------------------------------------------------------*/
 
         RecordType sourceSchema;
         RecordType sinkSchema;
@@ -106,23 +117,29 @@ public class Main {
         }
 
         // Combine source and sink schema
-        RecordType unifiedSchema;
+        RecordType combinedSchema;
         try {
-            unifiedSchema = buildUnifiedSchema(sourceSchema, sinkSchema);
+            combinedSchema = SchemaUtils.combine(sourceSchema, sinkSchema);
         } catch (IncompatibleSchemaException e) {
             logger.error("schema source and sink not compatible");
             return;
         }
 
-        RecordConvertor recordConvertor = new RecordConvertor(sourceSchema, unifiedSchema);
+        // Convert source data to the unified schema
+        RecordConvertor recordConvertor = new RecordConvertor(sourceSchema, combinedSchema);
         RecordBatchConvertor batchConvertor = new RecordBatchConvertor(recordConvertor);
 
-        // Thread executors
-        ThreadPoolExecutor threadPool = new ThreadPoolExecutor(0, MAX_THREADS_NUM,
+        /*----------------------------------------------------------
+         * Execute Pipelines in Multi-Threads
+         *---------------------------------------------------------*/
+
+        ThreadPoolExecutor threadPool = new ThreadPoolExecutor(0,
+            conf.getGeneralConf().getThreads(),
             1, TimeUnit.SECONDS,
             new SynchronousQueue<>(),
-            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("worker-%d").build());
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("pipeline-%d").build());
 
+        // fatalError also helps stop all threads when a fatal error happens on one of the threads
         AtomicReference<Throwable> fatalError = new AtomicReference<>();
         List<Future<PipelineResult>> futures = new ArrayList<>();
         for (int i = 0; i < conf.getGeneralConf().getThreads(); i++) {
@@ -147,24 +164,5 @@ public class Main {
 
         threadPool.shutdown();
         logger.info("Bye!");
-    }
-
-    private static RecordType buildUnifiedSchema(RecordType source, RecordType sink)
-        throws IncompatibleSchemaException {
-        if (source.getFieldCount() != sink.getFieldCount()) {
-            throw new IncompatibleSchemaException("field counts not matches");
-        }
-
-        RecordTypeBuilder builder = new RecordTypeBuilder();
-        for (int i = 0; i < source.getFieldCount(); i++) {
-            // use sink field name
-            if (source.getField(i).getType() == sink.getField(i).getType()) {
-                final Field f = sink.getField(i);
-                builder.addField(f.getName(), f.getType());
-            } else {
-                builder.addField(sink.getField(i).getName(), BasicType.STRING);
-            }
-        }
-        return builder.build();
     }
 }

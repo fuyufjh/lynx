@@ -10,6 +10,10 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Pipeline is composed by a pair of source and sink as well as the related utilities, such as data type convertor.
+ * By design a pipeline is always executed by a single thread.
+ */
 public class Pipeline implements Callable<PipelineResult> {
 
     private static final Logger logger = LoggerFactory.getLogger(Pipeline.class);

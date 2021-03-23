@@ -4,7 +4,7 @@ import me.ericfu.lightning.data.ByteString;
 
 public enum BasicType {
 
-    //BOOLEAN(Boolean.class),
+    //TODO: BOOLEAN(Boolean.class),
 
     /**
      * 64 bit signed ints
