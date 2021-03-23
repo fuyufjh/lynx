@@ -9,6 +9,7 @@ import me.ericfu.lightning.conf.SinkConf;
 import me.ericfu.lightning.conf.SourceConf;
 import me.ericfu.lightning.exception.InvalidConfigException;
 import me.ericfu.lightning.sink.jdbc.JdbcSinkConf;
+import me.ericfu.lightning.source.random.RandomSourceConf;
 import me.ericfu.lightning.source.text.TextSourceConf;
 
 import java.io.File;
@@ -67,6 +68,9 @@ public class ConfigReader {
         switch (sourceKind.toLowerCase()) {
         case "text":
             sourceConf = mapper.treeToValue(node.get("spec"), TextSourceConf.class);
+            break;
+        case "random":
+            sourceConf = mapper.treeToValue(node.get("spec"), RandomSourceConf.class);
             break;
         default:
             throw new InvalidConfigException("data source '" + sourceKind + "' not supported");

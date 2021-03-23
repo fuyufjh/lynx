@@ -24,13 +24,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
+
+    private static final int MAX_THREADS_NUM = 1024;
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
@@ -70,10 +74,10 @@ public class Main {
         Sink sink = new SinkFactory().create(conf.getGeneralConf(), conf.getSinkConf());
 
         try {
-            source.open();
-            sink.open();
+            source.init();
+            sink.init();
         } catch (Exception ex) {
-            logger.error("Open source or sink failed", ex);
+            logger.error("Initialize source or sink failed", ex);
             return;
         }
 
@@ -110,14 +114,23 @@ public class Main {
         RecordBatchConvertor batchConvertor = new RecordBatchConvertor(recordConvertor);
 
         // Thread executors
-        ThreadPoolExecutor threadPool =
-            new ThreadPoolExecutor(1, 32, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
-                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("worker-%d").build());
+        ThreadPoolExecutor threadPool = new ThreadPoolExecutor(0, MAX_THREADS_NUM,
+            1, TimeUnit.SECONDS,
+            new SynchronousQueue<>(),
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("worker-%d").build());
 
-        Future<?> future = threadPool.submit(new Pipeline(source, sink, batchConvertor));
+        List<Future<?>> futures = new ArrayList<>();
+        for (int i = 0; i < conf.getGeneralConf().getThreads(); i++) {
+            Pipeline task = new Pipeline(i, source.createReader(i), sink.createWriter(i), batchConvertor);
+            Future<?> future = threadPool.submit(task);
+            futures.add(future);
+        }
 
+        logger.info("All pipelines started");
         try {
-            future.get();
+            for (Future<?> future : futures) {
+                future.get();
+            }
         } catch (InterruptedException | ExecutionException ex) {
             logger.error("transfer failed", ex);
             return;

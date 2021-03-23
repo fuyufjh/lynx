@@ -14,6 +14,7 @@ abstract class JdbcUtils {
         case Types.BIGINT:
             return BasicType.INT64;
         case Types.FLOAT:
+        case Types.REAL:
             return BasicType.FLOAT;
         case Types.DOUBLE:
             return BasicType.DOUBLE;

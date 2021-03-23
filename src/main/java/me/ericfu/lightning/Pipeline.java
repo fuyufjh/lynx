@@ -2,8 +2,8 @@ package me.ericfu.lightning;
 
 import me.ericfu.lightning.data.RecordBatch;
 import me.ericfu.lightning.schema.RecordBatchConvertor;
-import me.ericfu.lightning.sink.Sink;
-import me.ericfu.lightning.source.Source;
+import me.ericfu.lightning.sink.SinkWriter;
+import me.ericfu.lightning.source.SourceReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,11 +11,13 @@ public class Pipeline implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(Pipeline.class);
 
-    private final Source source;
-    private final Sink sink;
+    private final int no;
+    private final SourceReader source;
+    private final SinkWriter sink;
     private final RecordBatchConvertor convertor;
 
-    public Pipeline(Source source, Sink sink, RecordBatchConvertor convertor) {
+    public Pipeline(int no, SourceReader source, SinkWriter sink, RecordBatchConvertor convertor) {
+        this.no = no;
         this.source = source;
         this.sink = sink;
         this.convertor = convertor;
@@ -23,6 +25,7 @@ public class Pipeline implements Runnable {
 
     @Override
     public void run() {
+        logger.info("Pipeline {} started", no);
         long count;
         try {
             count = transfer();
@@ -30,17 +33,35 @@ public class Pipeline implements Runnable {
             logger.error("Error during data transferring", ex);
             return;
         }
-        logger.info("Pipeline {}: {} rows transferred", 1, count);
+        logger.info("Pipeline {} completed: {} rows transferred", no, count);
     }
 
     private long transfer() throws Exception {
-        long count = 0;
-        RecordBatch batch;
-        while ((batch = source.readBatch()) != null) {
-            count += batch.size();
-            batch = convertor.convert(batch);
-            sink.writeBatch(batch);
+        try {
+            source.open();
+            sink.open();
+
+            long count = 0;
+            RecordBatch batch;
+            while ((batch = source.readBatch()) != null) {
+                count += batch.size();
+                batch = convertor.convert(batch);
+                sink.writeBatch(batch);
+            }
+            return count;
+
+        } finally {
+            try {
+                source.close();
+            } catch (Exception ex) {
+                logger.warn("close source failed", ex);
+            }
+
+            try {
+                sink.close();
+            } catch (Exception ex) {
+                logger.warn("close sink failed", ex);
+            }
         }
-        return count;
     }
 }

@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * TextValueReader reads a single value from current InputStream
  */
-public class TextValueReader {
+final class TextValueReader {
 
     private enum EndWith {
         NEW_LINE, SEPARATOR, EOF
