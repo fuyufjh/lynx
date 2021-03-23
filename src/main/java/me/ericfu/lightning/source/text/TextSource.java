@@ -2,12 +2,15 @@ package me.ericfu.lightning.source.text;
 
 import com.google.common.base.Preconditions;
 import me.ericfu.lightning.conf.GeneralConf;
-import me.ericfu.lightning.data.Batch;
-import me.ericfu.lightning.data.BatchBuilder;
 import me.ericfu.lightning.data.ByteString;
-import me.ericfu.lightning.data.Row;
+import me.ericfu.lightning.data.Record;
+import me.ericfu.lightning.data.RecordBatch;
+import me.ericfu.lightning.data.RecordBatchBuilder;
 import me.ericfu.lightning.exception.DataSourceException;
+import me.ericfu.lightning.schema.BasicType;
+import me.ericfu.lightning.schema.Field;
 import me.ericfu.lightning.schema.RecordType;
+import me.ericfu.lightning.schema.RecordTypeBuilder;
 import me.ericfu.lightning.source.SchemalessSource;
 
 import java.io.BufferedInputStream;
@@ -25,15 +28,26 @@ public class TextSource implements SchemalessSource {
     private BufferedInputStream in;
 
     private TextValueReader valueReader;
-    private BatchBuilder builder;
+    private RecordBatchBuilder builder;
 
     public TextSource(GeneralConf globals, TextSourceConf conf) {
         this.globals = globals;
         this.conf = conf;
     }
 
-    public void setSchema(RecordType schema) {
-        this.schema = Preconditions.checkNotNull(schema);
+    public void provideSchema(RecordType schema) {
+        RecordTypeBuilder builder = new RecordTypeBuilder();
+        for (Field field : schema.getFields()) {
+            // Always provide strings regardless of the requested type
+            builder.addField(field.getName(), BasicType.STRING);
+        }
+        this.schema = builder.build();
+    }
+
+    @Override
+    public RecordType getSchema() {
+        Preconditions.checkState(schema != null);
+        return schema;
     }
 
     public void open() throws DataSourceException {
@@ -58,25 +72,25 @@ public class TextSource implements SchemalessSource {
         }
 
         valueReader = new TextValueReader(in, sep);
-        builder = new BatchBuilder(globals.getBatchSize());
+        builder = new RecordBatchBuilder(globals.getBatchSize());
     }
 
     private void openSingleFile(File file) throws IOException {
         this.in = new BufferedInputStream(new FileInputStream(file));
     }
 
-    public Batch readBatch() throws DataSourceException {
+    public RecordBatch readBatch() throws DataSourceException {
         while (builder.size() < globals.getBatchSize()) {
-            Row row;
+            Record record;
             try {
-                row = readNextRow();
+                record = readNextRow();
             } catch (IOException ex) {
                 throw new DataSourceException(ex);
             }
-            if (row == null) {
+            if (record == null) {
                 break;
             }
-            builder.addRow(row);
+            builder.addRow(record);
         }
         if (builder.size() > 0) {
             return builder.buildAndReset();
@@ -85,7 +99,7 @@ public class TextSource implements SchemalessSource {
         }
     }
 
-    private Row readNextRow() throws IOException {
+    private Record readNextRow() throws IOException {
         Object[] values = new Object[schema.getFieldCount()];
         for (int i = 0; i < schema.getFieldCount(); i++) {
             ByteString value = valueReader.readString();
@@ -101,7 +115,7 @@ public class TextSource implements SchemalessSource {
             values[i] = value;
             valueReader.reset();
         }
-        return new Row(values);
+        return new Record(schema, values);
     }
 
     public void close() throws DataSourceException {

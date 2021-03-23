@@ -28,13 +28,13 @@ public enum BasicType {
 
     ;
 
-    private final Class<? extends Comparable<?>> clazz;
+    private final Class<?> clazz;
 
-    private BasicType(Class<? extends Comparable<?>> clazz) {
+    BasicType(Class<?> clazz) {
         this.clazz = clazz;
     }
 
-    public Class<? extends Comparable<?>> getClazz() {
-        return clazz;
+    public boolean isInstance(Object value) {
+        return clazz.isInstance(value);
     }
 }

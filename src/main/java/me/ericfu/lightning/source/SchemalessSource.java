@@ -10,6 +10,6 @@ public interface SchemalessSource extends Source {
     /**
      * Set a required schema. Should be invoked after initialized
      */
-    void setSchema(RecordType schema);
+    void provideSchema(RecordType schema);
 
 }

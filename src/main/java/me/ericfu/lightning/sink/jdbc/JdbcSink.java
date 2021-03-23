@@ -1,15 +1,14 @@
 package me.ericfu.lightning.sink.jdbc;
 
 import me.ericfu.lightning.conf.GeneralConf;
-import me.ericfu.lightning.data.Batch;
-import me.ericfu.lightning.data.ByteString;
-import me.ericfu.lightning.data.Row;
+import me.ericfu.lightning.data.Record;
+import me.ericfu.lightning.data.RecordBatch;
 import me.ericfu.lightning.exception.DataSinkException;
 import me.ericfu.lightning.schema.BasicType;
 import me.ericfu.lightning.schema.Field;
 import me.ericfu.lightning.schema.RecordType;
 import me.ericfu.lightning.schema.RecordTypeBuilder;
-import me.ericfu.lightning.sink.SchemaSink;
+import me.ericfu.lightning.sink.Sink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +21,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.stream.Collectors;
 
-public class JdbcSink implements SchemaSink {
+public class JdbcSink implements Sink {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcSink.class);
 
@@ -74,17 +73,17 @@ public class JdbcSink implements SchemaSink {
     }
 
     @Override
-    public void writeBatch(Batch batch) throws DataSinkException {
+    public void writeBatch(RecordBatch batch) throws DataSinkException {
         try {
-            for (Row row : batch) {
-                for (int i = 0; i < schema.getFieldCount(); i++) {
-                    final Object value = row.getValue(i);
-                    final Field field = schema.getField(i);
+            for (Record record : batch) {
+                for (int i = 0; i < record.getType().getFieldCount(); i++) {
+                    final Object value = record.getValue(i);
+                    final Field field = record.getType().getField(i);
                     setFieldValue(i + 1, field, value);
                 }
                 ps.addBatch();
             }
-            ps.executeUpdate();
+            ps.executeBatch();
         } catch (SQLException ex) {
             throw new DataSinkException(ex);
         }
@@ -115,9 +114,10 @@ public class JdbcSink implements SchemaSink {
             break;
         case STRING:
             if (value != null) {
-                ps.setBinaryStream(i, ((ByteString) value).getBinaryStream());
+                // TODO: improve performance and split binary/string
+                ps.setString(i, value.toString());
             } else {
-                ps.setNull(i, Types.BINARY);
+                ps.setNull(i, Types.VARCHAR);
             }
             break;
         }
@@ -142,6 +142,6 @@ public class JdbcSink implements SchemaSink {
             .collect(Collectors.joining(",", "(", ")"));
         String valueList = schema.getFields().stream().map(x -> "?")
             .collect(Collectors.joining(",", "(", ")"));
-        return "INSERT OR IGNORE INTO " + conf.getTable() + fieldList + " VALUES " + valueList;
+        return "INSERT INTO " + conf.getTable() + fieldList + " VALUES " + valueList;
     }
 }

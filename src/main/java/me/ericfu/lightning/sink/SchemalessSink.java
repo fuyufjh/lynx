@@ -2,11 +2,11 @@ package me.ericfu.lightning.sink;
 
 import me.ericfu.lightning.schema.RecordType;
 
-public interface SchemalessSink {
+public interface SchemalessSink extends Sink {
 
     /**
      * Set a required schema. Should be invoked after initialized
      */
-    void setSchema(RecordType schema) throws IncompatibleClassChangeError;
+    void provideSchema(RecordType schema) throws IncompatibleClassChangeError;
 
 }

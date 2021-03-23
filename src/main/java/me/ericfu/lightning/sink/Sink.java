@@ -1,9 +1,15 @@
 package me.ericfu.lightning.sink;
 
-import me.ericfu.lightning.data.Batch;
+import me.ericfu.lightning.data.RecordBatch;
 import me.ericfu.lightning.exception.DataSinkException;
+import me.ericfu.lightning.schema.RecordType;
 
 public interface Sink {
+
+    /**
+     * Get schema. Should be invoked after initialized
+     */
+    RecordType getSchema();
 
     void open() throws DataSinkException;
 
@@ -12,7 +18,7 @@ public interface Sink {
      *
      * @return next batch or null for EOF
      */
-    void writeBatch(Batch batch) throws DataSinkException;
+    void writeBatch(RecordBatch batch) throws DataSinkException;
 
     void close() throws DataSinkException;
 

@@ -12,7 +12,8 @@ public class RecordTypeBuilder {
     }
 
     public void addField(String name, BasicType type) {
-        fields.add(new Field(name, type));
+        final int ordinal = fields.size();
+        fields.add(new Field(ordinal, name, type));
     }
 
     public RecordType build() {

@@ -1,12 +1,18 @@
 package me.ericfu.lightning.source;
 
-import me.ericfu.lightning.data.Batch;
+import me.ericfu.lightning.data.RecordBatch;
 import me.ericfu.lightning.exception.DataSourceException;
+import me.ericfu.lightning.schema.RecordType;
 
 /**
  * Data source
  */
 public interface Source {
+
+    /**
+     * Get the table schema. Should be invoked after initialized
+     */
+    RecordType getSchema();
 
     void open() throws DataSourceException;
 
@@ -15,7 +21,7 @@ public interface Source {
      *
      * @return next batch or null for EOF
      */
-    Batch readBatch() throws DataSourceException;
+    RecordBatch readBatch() throws DataSourceException;
 
     void close() throws DataSourceException;
 

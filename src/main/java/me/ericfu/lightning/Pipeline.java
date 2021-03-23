@@ -1,6 +1,7 @@
 package me.ericfu.lightning;
 
-import me.ericfu.lightning.data.Batch;
+import me.ericfu.lightning.data.RecordBatch;
+import me.ericfu.lightning.schema.RecordBatchConvertor;
 import me.ericfu.lightning.sink.Sink;
 import me.ericfu.lightning.source.Source;
 import org.slf4j.Logger;
@@ -12,10 +13,12 @@ public class Pipeline implements Runnable {
 
     private final Source source;
     private final Sink sink;
+    private final RecordBatchConvertor convertor;
 
-    public Pipeline(Source source, Sink sink) {
+    public Pipeline(Source source, Sink sink, RecordBatchConvertor convertor) {
         this.source = source;
         this.sink = sink;
+        this.convertor = convertor;
     }
 
     @Override
@@ -32,9 +35,10 @@ public class Pipeline implements Runnable {
 
     private long transfer() throws Exception {
         long count = 0;
-        Batch batch;
+        RecordBatch batch;
         while ((batch = source.readBatch()) != null) {
             count += batch.size();
+            batch = convertor.convert(batch);
             sink.writeBatch(batch);
         }
         return count;

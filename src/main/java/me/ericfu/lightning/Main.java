@@ -1,13 +1,17 @@
 package me.ericfu.lightning;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import me.ericfu.lightning.exception.IncompatibleSchemaException;
 import me.ericfu.lightning.exception.InvalidConfigException;
+import me.ericfu.lightning.schema.BasicType;
+import me.ericfu.lightning.schema.Field;
+import me.ericfu.lightning.schema.RecordBatchConvertor;
+import me.ericfu.lightning.schema.RecordConvertor;
 import me.ericfu.lightning.schema.RecordType;
-import me.ericfu.lightning.sink.SchemaSink;
+import me.ericfu.lightning.schema.RecordTypeBuilder;
 import me.ericfu.lightning.sink.SchemalessSink;
 import me.ericfu.lightning.sink.Sink;
 import me.ericfu.lightning.sink.SinkFactory;
-import me.ericfu.lightning.source.SchemaSource;
 import me.ericfu.lightning.source.SchemalessSource;
 import me.ericfu.lightning.source.Source;
 import me.ericfu.lightning.source.SourceFactory;
@@ -73,28 +77,44 @@ public class Main {
             return;
         }
 
-        RecordType sourceSchema = source instanceof SchemaSource ? ((SchemaSource) source).getSchema() : null;
-        RecordType sinkSchema = sink instanceof SchemaSink ? ((SchemaSink) sink).getSchema() : null;
-
-        if (sourceSchema == null && sinkSchema == null) {
-            logger.error("At least one of source/sink should be with schema");
+        RecordType sourceSchema;
+        RecordType sinkSchema;
+        if (source instanceof SchemalessSource && sink instanceof SchemalessSink) {
+            logger.error("At least one of source or sink should be with schema");
             return;
-        } else if (sourceSchema != null && sinkSchema != null) {
-            logger.error("TODO: not implemented");
-            return;
-        } else if (sourceSchema != null) {
-            assert sink instanceof SchemalessSink;
-            ((SchemalessSink) sink).setSchema(sourceSchema);
+        } else if (source instanceof SchemalessSource) {
+            logger.info("Data source is schemaless. Provide schema of sink to it");
+            sinkSchema = sink.getSchema();
+            ((SchemalessSource) source).provideSchema(sinkSchema);
+            sourceSchema = source.getSchema();
+        } else if (sink instanceof SchemalessSink) {
+            logger.info("Data sink is schemaless. Provide schema of source to it");
+            sourceSchema = source.getSchema();
+            ((SchemalessSink) sink).provideSchema(sourceSchema);
+            sinkSchema = sink.getSchema();
         } else {
-            assert source instanceof SchemalessSource;
-            ((SchemalessSource) source).setSchema(sinkSchema);
+            sourceSchema = source.getSchema();
+            sinkSchema = sink.getSchema();
         }
 
+        // Combine source and sink schema
+        RecordType unifiedSchema;
+        try {
+            unifiedSchema = buildUnifiedSchema(sourceSchema, sinkSchema);
+        } catch (IncompatibleSchemaException e) {
+            logger.error("schema source and sink not compatible");
+            return;
+        }
+
+        RecordConvertor recordConvertor = new RecordConvertor(sourceSchema, unifiedSchema);
+        RecordBatchConvertor batchConvertor = new RecordBatchConvertor(recordConvertor);
+
+        // Thread executors
         ThreadPoolExecutor threadPool =
             new ThreadPoolExecutor(1, 32, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
                 new ThreadFactoryBuilder().setDaemon(true).setNameFormat("worker-%d").build());
 
-        Future<?> future = threadPool.submit(new Pipeline(source, sink));
+        Future<?> future = threadPool.submit(new Pipeline(source, sink, batchConvertor));
 
         try {
             future.get();
@@ -105,5 +125,24 @@ public class Main {
 
         threadPool.shutdown();
         logger.info("Bye!");
+    }
+
+    private static RecordType buildUnifiedSchema(RecordType source, RecordType sink)
+        throws IncompatibleSchemaException {
+        if (source.getFieldCount() != sink.getFieldCount()) {
+            throw new IncompatibleSchemaException("field counts not matches");
+        }
+
+        RecordTypeBuilder builder = new RecordTypeBuilder();
+        for (int i = 0; i < source.getFieldCount(); i++) {
+            // use sink field name
+            if (source.getField(i).getType() == sink.getField(i).getType()) {
+                final Field f = sink.getField(i);
+                builder.addField(f.getName(), f.getType());
+            } else {
+                builder.addField(sink.getField(i).getName(), BasicType.STRING);
+            }
+        }
+        return builder.build();
     }
 }
