@@ -1,11 +1,7 @@
 package me.ericfu.lightning.source.random;
 
 import me.ericfu.lightning.conf.GeneralConf;
-import me.ericfu.lightning.data.ByteString;
-import me.ericfu.lightning.data.Record;
-import me.ericfu.lightning.data.RecordBatch;
-import me.ericfu.lightning.data.RecordBatchBuilder;
-import me.ericfu.lightning.data.RecordBuilder;
+import me.ericfu.lightning.data.*;
 import me.ericfu.lightning.exception.DataSourceException;
 import me.ericfu.lightning.schema.Field;
 import me.ericfu.lightning.schema.RecordType;
@@ -15,7 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class RandomSource implements SchemalessSource {
 
@@ -52,11 +51,13 @@ public class RandomSource implements SchemalessSource {
     }
 
     @Override
-    public SourceReader createReader(int partNo) {
+    public List<SourceReader> createReaders() {
         long[] cut = accumulate(split(conf.getRecords(), globals.getThreads()));
-        long start = partNo > 0 ? cut[partNo - 1] : 0;
-        long end = cut[partNo];
-        return new RandomSourceReader(start, end);
+        return IntStream.range(0, globals.getThreads()).mapToObj(i -> {
+            long start = i > 0 ? cut[i - 1] : 0;
+            long end = cut[i];
+            return new RandomSourceReader(start, end);
+        }).collect(Collectors.toList());
     }
 
     public class RandomSourceReader implements SourceReader {

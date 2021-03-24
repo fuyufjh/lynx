@@ -3,6 +3,8 @@ package me.ericfu.lightning.sink;
 import me.ericfu.lightning.exception.DataSinkException;
 import me.ericfu.lightning.schema.RecordType;
 
+import java.util.List;
+
 public interface Sink {
 
     void init() throws DataSinkException;
@@ -12,5 +14,5 @@ public interface Sink {
      */
     RecordType getSchema();
 
-    SinkWriter createWriter(int partNo);
+    List<SinkWriter> createWriters(int n);
 }

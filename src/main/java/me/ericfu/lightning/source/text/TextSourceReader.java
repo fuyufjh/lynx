@@ -15,55 +15,43 @@ import java.io.IOException;
 public class TextSourceReader implements SourceReader {
 
     private final TextSource s;
-    private final int partNo;
+
+    /**
+     * file must be a normal file, not a directory
+     */
+    private final File file;
 
     private BufferedInputStream in;
     private TextValueReader valueReader;
     private RecordBatchBuilder builder;
 
-    public TextSourceReader(TextSource s, int partNo) {
+    public TextSourceReader(TextSource s, File file) {
         this.s = s;
-        this.partNo = partNo;
+        this.file = file;
     }
 
     public void open() throws DataSourceException {
-        if (partNo > 0) {
-            return;
-        }
-
         if (s.conf.getSeparator().length() == 1 && s.conf.getSeparator().charAt(0) < 0x80) {
             s.sep = (byte) s.conf.getSeparator().charAt(0);
         } else {
             throw new DataSourceException("bad separator '" + s.conf.getSeparator() + "'");
         }
 
-        final File file = new File(s.conf.getPath());
         if (!file.exists()) {
             throw new DataSourceException("file or directory '" + s.conf.getPath() + "' not exist");
         }
-        if (file.isDirectory()) {
-            throw new DataSourceException("not implemented");
-        } else {
-            try {
-                openSingleFile(file);
-            } catch (IOException ex) {
-                throw new DataSourceException(ex);
-            }
+
+        try {
+            this.in = new BufferedInputStream(new FileInputStream(file));
+        } catch (IOException ex) {
+            throw new DataSourceException(ex);
         }
 
         valueReader = new TextValueReader(in, s.sep);
         builder = new RecordBatchBuilder(s.globals.getBatchSize());
     }
 
-    private void openSingleFile(File file) throws IOException {
-        this.in = new BufferedInputStream(new FileInputStream(file));
-    }
-
     public RecordBatch readBatch() throws DataSourceException {
-        if (partNo > 0) {
-            return null;
-        }
-
         while (builder.size() < s.globals.getBatchSize()) {
             Record record;
             try {
@@ -103,10 +91,6 @@ public class TextSourceReader implements SourceReader {
     }
 
     public void close() throws DataSourceException {
-        if (partNo > 0) {
-            return;
-        }
-
         try {
             this.in.close();
         } catch (IOException ex) {

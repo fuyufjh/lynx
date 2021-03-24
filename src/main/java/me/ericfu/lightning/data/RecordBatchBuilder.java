@@ -1,5 +1,7 @@
 package me.ericfu.lightning.data;
 
+import lombok.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,10 +10,10 @@ public class RecordBatchBuilder {
     private final List<Record> records;
 
     public RecordBatchBuilder(int initialCapacity) {
-        this.records = new ArrayList<Record>(initialCapacity);
+        this.records = new ArrayList<>(initialCapacity);
     }
 
-    public void addRow(Record record) {
+    public void addRow(@NonNull Record record) {
         records.add(record);
     }
 

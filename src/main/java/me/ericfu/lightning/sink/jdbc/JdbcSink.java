@@ -11,12 +11,10 @@ import me.ericfu.lightning.sink.SinkWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class JdbcSink implements Sink {
 
@@ -65,8 +63,10 @@ public class JdbcSink implements Sink {
     }
 
     @Override
-    public SinkWriter createWriter(int partNo) {
-        return new JdbcSinkWriter(this);
+    public List<SinkWriter> createWriters(int partitions) {
+        return IntStream.range(0, partitions)
+            .mapToObj(i -> new JdbcSinkWriter(this))
+            .collect(Collectors.toList());
     }
 
     private String buildInsertTemplate() {

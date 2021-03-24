@@ -1,5 +1,6 @@
 package me.ericfu.lightning.data;
 
+import lombok.NonNull;
 import me.ericfu.lightning.schema.Field;
 import me.ericfu.lightning.schema.RecordType;
 
@@ -8,7 +9,7 @@ public class RecordBuilder {
     private final RecordType type;
     private final Object[] values;
 
-    public RecordBuilder(RecordType type) {
+    public RecordBuilder(@NonNull RecordType type) {
         this.type = type;
         this.values = new Object[type.getFieldCount()];
     }

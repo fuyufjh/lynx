@@ -6,7 +6,7 @@ public class RecordBatch implements Iterable<Record> {
 
     private final Record[] records;
 
-    public RecordBatch(Record[] records) {
+    RecordBatch(Record[] records) {
         this.records = records;
     }
 

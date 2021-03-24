@@ -12,9 +12,11 @@ import me.ericfu.lightning.schema.RecordType;
 import me.ericfu.lightning.sink.SchemalessSink;
 import me.ericfu.lightning.sink.Sink;
 import me.ericfu.lightning.sink.SinkFactory;
+import me.ericfu.lightning.sink.SinkWriter;
 import me.ericfu.lightning.source.SchemalessSource;
 import me.ericfu.lightning.source.Source;
 import me.ericfu.lightning.source.SourceFactory;
+import me.ericfu.lightning.source.SourceReader;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,23 +120,31 @@ public class Main {
 
         // Convert source data to sink schema
         RecordConvertor recordConvertor = new RecordConvertor(sourceSchema, sinkSchema);
-        RecordBatchConvertor batchConvertor = new RecordBatchConvertor(recordConvertor);
 
         /*----------------------------------------------------------
          * Execute Pipelines in Multi-Threads
          *---------------------------------------------------------*/
 
-        ThreadPoolExecutor threadPool = new ThreadPoolExecutor(0,
+        ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
+            conf.getGeneral().getThreads(),
             conf.getGeneral().getThreads(),
             1, TimeUnit.SECONDS,
-            new SynchronousQueue<>(),
+            new LinkedBlockingQueue<>(),
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("Pipeline-%d").build());
 
         // fatalError also helps stop all threads when a fatal error happens on one of the threads
         AtomicReference<Throwable> fatalError = new AtomicReference<>();
         List<Future<PipelineResult>> futures = new ArrayList<>();
-        for (int i = 0; i < conf.getGeneral().getThreads(); i++) {
-            Pipeline task = new Pipeline(i, source.createReader(i), sink.createWriter(i), batchConvertor, fatalError);
+
+        // num of pipeline is determined by num of source partitions
+        List<SourceReader> readers = source.createReaders();
+        List<SinkWriter> writers = sink.createWriters(readers.size());
+        logger.info("The task is partitioned into {} pipelines executed by {} threads",
+            readers.size(), conf.getGeneral().getThreads());
+
+        for (int i = 0; i < readers.size(); i++) {
+            RecordBatchConvertor convertor = new RecordBatchConvertor(recordConvertor);
+            Pipeline task = new Pipeline(i, readers.get(i), writers.get(i), convertor, fatalError);
             futures.add(threadPool.submit(task));
         }
 

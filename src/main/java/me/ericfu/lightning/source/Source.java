@@ -3,6 +3,8 @@ package me.ericfu.lightning.source;
 import me.ericfu.lightning.exception.DataSourceException;
 import me.ericfu.lightning.schema.RecordType;
 
+import java.util.List;
+
 /**
  * Data source
  */
@@ -16,8 +18,8 @@ public interface Source {
     RecordType getSchema();
 
     /**
-     * Create a reader
+     * Create readers
      */
-    SourceReader createReader(int partNo);
+    List<SourceReader> createReaders();
 
 }
