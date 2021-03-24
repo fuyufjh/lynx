@@ -58,6 +58,7 @@ public class TextSinkWriter implements SinkWriter {
         for (int i = 0; i < table.getType().getFieldCount(); i++) {
             final Object v = record.getValue(i);
             if (v != null) {
+                boolean quote = false;
                 String text;
                 switch (table.getType().getField(i).getType()) {
                 case INT64:
@@ -71,11 +72,14 @@ public class TextSinkWriter implements SinkWriter {
                     break;
                 case STRING:
                     text = ((ByteString) v).toString().replace("\"", "\"\"");
+                    quote = true;
                     break;
                 default:
                     throw new AssertionError("unreachable");
                 }
+                if (quote) out.write('"');
                 out.write(text.getBytes(StandardCharsets.UTF_8));
+                if (quote) out.write('"');
             }
             if (i < table.getType().getFieldCount() - 1) {
                 out.write(sep);
@@ -88,7 +92,9 @@ public class TextSinkWriter implements SinkWriter {
     @Override
     public void close() throws DataSinkException {
         try {
-            out.close();
+            if (out != null) {
+                out.close();
+            }
         } catch (IOException e) {
             throw new DataSinkException("cannot close file", e);
         }

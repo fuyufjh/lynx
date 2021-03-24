@@ -87,7 +87,9 @@ public class JdbcSinkWriter implements SinkWriter {
     @Override
     public void close() throws DataSinkException {
         try {
-            connection.close();
+            if (connection != null) {
+                connection.close();
+            }
         } catch (SQLException ex) {
             throw new DataSinkException(ex);
         }

@@ -2,7 +2,6 @@ package me.ericfu.lightning.schema;
 
 import javafx.util.Pair;
 import me.ericfu.lightning.data.ByteString;
-import sun.jvm.hotspot.utilities.AssertionFailure;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +37,7 @@ public abstract class Convertors {
     private static void register(BasicType from, BasicType to, Convertor convertor) {
         Convertor old = convertors.put(new Pair<>(from, to), convertor);
         if (old != null) {
-            throw new AssertionFailure("convertor (" + from + " -> " + to + ") is duplicated");
+            throw new AssertionError("convertor (" + from + " -> " + to + ") is duplicated");
         }
     }
 }

@@ -6,12 +6,16 @@ import me.ericfu.lightning.schema.Schema;
 import me.ericfu.lightning.schema.Table;
 import me.ericfu.lightning.sink.SchemalessSink;
 import me.ericfu.lightning.sink.SinkWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class TextSink implements SchemalessSink {
+
+    private static final Logger logger = LoggerFactory.getLogger(TextSink.class);
 
     final GeneralConf globals;
     final TextSinkConf conf;
@@ -28,7 +32,10 @@ public class TextSink implements SchemalessSink {
     public void init() throws DataSinkException {
         File dir = new File(conf.getPath());
         if (!dir.exists()) {
-            throw new DataSinkException("path not exists");
+            logger.info("Path '" + conf.getPath() + "' not exist and will be created");
+            if (!dir.mkdirs()) {
+                throw new DataSinkException("cannot create directory");
+            }
         }
         if (!dir.isDirectory()) {
             throw new DataSinkException("path is not directory");

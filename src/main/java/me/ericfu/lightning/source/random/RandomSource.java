@@ -2,9 +2,11 @@ package me.ericfu.lightning.source.random;
 
 import me.ericfu.lightning.conf.GeneralConf;
 import me.ericfu.lightning.exception.DataSourceException;
+import me.ericfu.lightning.schema.RecordTypeBuilder;
 import me.ericfu.lightning.schema.Schema;
+import me.ericfu.lightning.schema.SchemaBuilder;
 import me.ericfu.lightning.schema.Table;
-import me.ericfu.lightning.source.SchemalessSource;
+import me.ericfu.lightning.source.Source;
 import me.ericfu.lightning.source.SourceReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class RandomSource implements SchemalessSource {
+public class RandomSource implements Source {
 
     private static final Logger logger = LoggerFactory.getLogger(RandomSource.class);
 
@@ -28,18 +30,28 @@ public class RandomSource implements SchemalessSource {
     }
 
     @Override
-    public void provideSchema(Schema schema) {
-        this.schema = schema;
-    }
-
-    @Override
     public void init() throws DataSourceException {
-        // do nothing
+        this.schema = loadPredefinedSchema();
     }
 
     @Override
     public Schema getSchema() {
         return schema;
+    }
+
+    /**
+     * Load schema defined in config file
+     */
+    private Schema loadPredefinedSchema() {
+        SchemaBuilder schema = new SchemaBuilder();
+        conf.getColumns().forEach((table, columns) -> {
+            RecordTypeBuilder type = new RecordTypeBuilder();
+            columns.forEach(rule -> {
+                type.addField(rule.getName(), rule.getType());
+            });
+            schema.addTable(new Table(table, type.build()));
+        });
+        return schema.build();
     }
 
     @Override
@@ -48,7 +60,7 @@ public class RandomSource implements SchemalessSource {
         return IntStream.range(0, globals.getThreads()).mapToObj(i -> {
             long start = i > 0 ? cut[i - 1] : 0;
             long end = cut[i];
-            return new RandomSourceReader(this, table.getType(), start, end);
+            return new RandomSourceReader(this, table, start, end);
         }).collect(Collectors.toList());
     }
 

@@ -6,7 +6,7 @@ import me.ericfu.lightning.data.RecordBatchBuilder;
 import me.ericfu.lightning.data.RecordBuilder;
 import me.ericfu.lightning.exception.DataSourceException;
 import me.ericfu.lightning.schema.Field;
-import me.ericfu.lightning.schema.RecordType;
+import me.ericfu.lightning.schema.Table;
 import me.ericfu.lightning.source.SourceReader;
 
 import java.util.Random;
@@ -16,16 +16,17 @@ public class RandomSourceReader implements SourceReader {
     private static final int RANDOM_STRING_LENGTH = 20;
 
     private final RandomSource s;
-    private final RecordType recordType;
+    private final Table table;
     private final long end;
     private long current;
 
     private RecordBatchBuilder builder;
     private Random random;
+    private RandomGenerator[] generators;
 
-    public RandomSourceReader(RandomSource s, RecordType recordType, long start, long end) {
+    public RandomSourceReader(RandomSource s, Table table, long start, long end) {
         this.s = s;
-        this.recordType = recordType;
+        this.table = table;
         this.current = start;
         this.end = end;
     }
@@ -34,6 +35,30 @@ public class RandomSourceReader implements SourceReader {
     public void open() throws DataSourceException {
         this.builder = new RecordBatchBuilder(s.globals.getBatchSize());
         this.random = new Random();
+
+        this.generators = new RandomGenerator[table.getType().getFieldCount()];
+        for (int i = 0; i < table.getType().getFieldCount(); i++) {
+            Field field = table.getType().getField(i);
+
+            // Find the matched column rule and read the rule code
+            String code = null;
+            if (s.conf.getColumns() != null) {
+                for (RandomSourceConf.RandomRule r : s.conf.getColumns().get(table.getName())) {
+                    if (r.getName().equals(field.getName())) {
+                        if (r.getRule() != null) {
+                            code = r.getRule();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (code == null) {
+                generators[i] = createDefaultGenerator(field);
+            } else {
+                generators[i] = new RandomGeneratorCompiler().compile(code);
+            }
+        }
     }
 
     @Override
@@ -50,32 +75,28 @@ public class RandomSourceReader implements SourceReader {
     }
 
     private Record buildRandomRecord() {
-        RecordBuilder builder = new RecordBuilder(recordType);
-        for (int i = 0; i < recordType.getFieldCount(); i++) {
-            final Field field = recordType.getField(i);
-            if (s.conf.getAutoIncrementKey().equals(field.getName())) {
-                // set auto-increment column to current record number
-                builder.set(i, current);
-                continue;
-            }
-            switch (field.getType()) {
-            case INT64:
-                builder.set(i, (long) random.nextInt());
-                break;
-            case FLOAT:
-                builder.set(i, random.nextFloat());
-                break;
-            case DOUBLE:
-                builder.set(i, random.nextDouble());
-                break;
-            case STRING:
-                builder.set(i, RandomUtils.createRandomAscii(random, RANDOM_STRING_LENGTH));
-                break;
-            default:
-                throw new IllegalStateException("unreachable");
-            }
+        RecordBuilder builder = new RecordBuilder(table.getType());
+        for (int i = 0; i < table.getType().getFieldCount(); i++) {
+            builder.set(i, generators[i].generate(current, random));
         }
         return builder.build();
+    }
+
+    private static RandomGenerator createDefaultGenerator(Field field) {
+        switch (field.getType()) {
+        case INT64:
+            // TODO: INT32/INT64
+            return (i, r) -> (long) r.nextInt();
+        case FLOAT:
+            return (i, r) -> r.nextFloat();
+        case DOUBLE:
+            return (i, r) -> r.nextDouble();
+        case STRING:
+            // TODO: save precision/scale in Field and use it as string length
+            return (i, r) -> RandomUtils.createRandomAscii(r, RANDOM_STRING_LENGTH);
+        default:
+            throw new AssertionError();
+        }
     }
 
     @Override
