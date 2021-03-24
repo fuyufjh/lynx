@@ -1,10 +1,12 @@
 package me.ericfu.lightning.source.random;
 
+import lombok.Data;
 import me.ericfu.lightning.conf.SourceConf;
 
 import javax.validation.constraints.Positive;
 
-public class RandomSourceConf extends SourceConf {
+@Data
+public class RandomSourceConf implements SourceConf {
 
     /**
      * Total number of records
@@ -17,19 +19,4 @@ public class RandomSourceConf extends SourceConf {
      */
     private String autoIncrementKey = "";
 
-    public int getRecords() {
-        return records;
-    }
-
-    public void setRecords(int records) {
-        this.records = records;
-    }
-
-    public String getAutoIncrementKey() {
-        return autoIncrementKey;
-    }
-
-    public void setAutoIncrementKey(String autoIncrementKey) {
-        this.autoIncrementKey = autoIncrementKey;
-    }
 }

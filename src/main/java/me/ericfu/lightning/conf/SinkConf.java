@@ -8,6 +8,6 @@ import me.ericfu.lightning.sink.jdbc.JdbcSinkConf;
 @JsonSubTypes(value = {
     @JsonSubTypes.Type(value = JdbcSinkConf.class, name = "jdbc"),
 })
-public abstract class SinkConf extends Conf {
+public interface SinkConf {
 
 }

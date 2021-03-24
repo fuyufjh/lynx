@@ -20,8 +20,6 @@
     </properties>
 
     <dependencies>
-
-        <!-- Log libs -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
@@ -48,9 +46,10 @@
             <version>${guava.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-            <version>0.9.12</version>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.16</version>
+            <scope>provided</scope>
         </dependency>
         <!-- Bean Validation -->
         <dependency>

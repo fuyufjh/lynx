@@ -10,6 +10,6 @@ import me.ericfu.lightning.source.text.TextSourceConf;
     @JsonSubTypes.Type(value = TextSourceConf.class, name = "text"),
     @JsonSubTypes.Type(value = RandomSourceConf.class, name = "random"),
 })
-public abstract class SourceConf extends Conf {
+public interface SourceConf {
 
 }

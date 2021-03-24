@@ -1,5 +1,6 @@
 package me.ericfu.lightning.conf;
 
+import lombok.Data;
 import me.ericfu.lightning.exception.InvalidConfigException;
 
 import javax.validation.ConstraintViolation;
@@ -10,6 +11,7 @@ import javax.validation.constraints.NotNull;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Data
 public final class RootConf {
 
     @Valid
