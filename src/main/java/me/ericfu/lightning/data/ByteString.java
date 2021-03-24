@@ -2,11 +2,14 @@ package me.ericfu.lightning.data;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * ByteString stores strings in byte array and charset
  */
 public final class ByteString implements Comparable<ByteString> {
+
+    public static final Charset CHARSET_BINARY = StandardCharsets.ISO_8859_1;
 
     private final byte[] buf;
     private final int offset;
@@ -43,7 +46,7 @@ public final class ByteString implements Comparable<ByteString> {
         return new String(buf, offset, length, charset);
     }
 
-    public InputStream getBinaryStream() {
+    public InputStream toBinaryStream() {
         return new InputStream() {
             private int index;
 
