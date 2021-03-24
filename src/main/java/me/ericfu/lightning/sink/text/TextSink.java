@@ -8,6 +8,8 @@ import me.ericfu.lightning.sink.SchemalessSink;
 import me.ericfu.lightning.sink.SinkWriter;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class TextSink implements SchemalessSink {
 
@@ -15,6 +17,7 @@ public class TextSink implements SchemalessSink {
     final TextSinkConf conf;
 
     Schema schema;
+    int writerCount = 0;
 
     public TextSink(GeneralConf globals, TextSinkConf conf) {
         this.globals = globals;
@@ -44,6 +47,8 @@ public class TextSink implements SchemalessSink {
 
     @Override
     public SinkWriter createWriter(Table table) {
-        return null; // TODO
+        String fileName = String.format("%d.txt", writerCount++);
+        Path targetPath = Paths.get(conf.getPath(), fileName);
+        return new TextSinkWriter(this, targetPath.toFile(), table);
     }
 }

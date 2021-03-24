@@ -20,4 +20,8 @@ public class Record {
     public Object getValue(int i) {
         return values[i];
     }
+
+    public int size() {
+        return values.length;
+    }
 }
