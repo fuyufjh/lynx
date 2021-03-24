@@ -2,7 +2,6 @@ package me.ericfu.lightning.conf;
 
 import org.hibernate.validator.constraints.Range;
 
-@Kind("general")
 public final class GeneralConf extends Conf {
 
     @Range(min = 1, max = 10000000)

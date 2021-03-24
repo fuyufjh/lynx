@@ -1,11 +1,9 @@
 package me.ericfu.lightning.sink.jdbc;
 
-import me.ericfu.lightning.conf.Kind;
 import me.ericfu.lightning.conf.SinkConf;
 
 import javax.validation.constraints.NotEmpty;
 
-@Kind("jdbc")
 public class JdbcSinkConf extends SinkConf {
 
     @NotEmpty

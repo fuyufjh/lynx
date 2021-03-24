@@ -1,8 +1,9 @@
 package me.ericfu.lightning;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import me.ericfu.lightning.conf.ConfReader;
-import me.ericfu.lightning.exception.InvalidConfigException;
+import me.ericfu.lightning.conf.RootConf;
 import me.ericfu.lightning.pipeline.Pipeline;
 import me.ericfu.lightning.pipeline.PipelineResult;
 import me.ericfu.lightning.schema.RecordBatchConvertor;
@@ -57,10 +58,16 @@ public class Main {
             return;
         }
 
-        ConfReader conf = new ConfReader(new File(confPath));
+        /*----------------------------------------------------------
+         * Load Configurations
+         *---------------------------------------------------------*/
+
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        RootConf conf;
         try {
-            conf.readConfig();
-        } catch (InvalidConfigException e) {
+            conf = mapper.readValue(new File(confPath), RootConf.class);
+            conf.validate();
+        } catch (Exception e) {
             logger.error("Invalid config: {}", e.getMessage());
             return;
         }
@@ -71,8 +78,8 @@ public class Main {
          * Construct and Initialize Source and Sink
          *---------------------------------------------------------*/
 
-        Source source = new SourceFactory().create(conf.getGeneralConf(), conf.getSourceConf());
-        Sink sink = new SinkFactory().create(conf.getGeneralConf(), conf.getSinkConf());
+        Source source = new SourceFactory().create(conf.getGeneral(), conf.getSource());
+        Sink sink = new SinkFactory().create(conf.getGeneral(), conf.getSink());
 
         try {
             source.init();
@@ -118,7 +125,7 @@ public class Main {
          *---------------------------------------------------------*/
 
         ThreadPoolExecutor threadPool = new ThreadPoolExecutor(0,
-            conf.getGeneralConf().getThreads(),
+            conf.getGeneral().getThreads(),
             1, TimeUnit.SECONDS,
             new SynchronousQueue<>(),
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("Pipeline-%d").build());
@@ -126,7 +133,7 @@ public class Main {
         // fatalError also helps stop all threads when a fatal error happens on one of the threads
         AtomicReference<Throwable> fatalError = new AtomicReference<>();
         List<Future<PipelineResult>> futures = new ArrayList<>();
-        for (int i = 0; i < conf.getGeneralConf().getThreads(); i++) {
+        for (int i = 0; i < conf.getGeneral().getThreads(); i++) {
             Pipeline task = new Pipeline(i, source.createReader(i), sink.createWriter(i), batchConvertor, fatalError);
             futures.add(threadPool.submit(task));
         }

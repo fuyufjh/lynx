@@ -1,11 +1,9 @@
 package me.ericfu.lightning.source.text;
 
-import me.ericfu.lightning.conf.Kind;
 import me.ericfu.lightning.conf.SourceConf;
 
 import javax.validation.constraints.NotEmpty;
 
-@Kind("text")
 public class TextSourceConf extends SourceConf {
 
     /**
