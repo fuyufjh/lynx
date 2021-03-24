@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.ericfu.lightning.conf.RootConf;
+import me.ericfu.lightning.exception.IncompatibleSchemaException;
 import me.ericfu.lightning.pipeline.Pipeline;
 import me.ericfu.lightning.pipeline.PipelineResult;
-import me.ericfu.lightning.schema.RecordBatchConvertor;
 import me.ericfu.lightning.schema.RecordConvertor;
-import me.ericfu.lightning.schema.RecordType;
+import me.ericfu.lightning.schema.Schema;
+import me.ericfu.lightning.schema.SchemaUtils;
+import me.ericfu.lightning.schema.Table;
 import me.ericfu.lightning.sink.SchemalessSink;
 import me.ericfu.lightning.sink.Sink;
 import me.ericfu.lightning.sink.SinkFactory;
@@ -28,8 +30,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
-
-    private static final int MAX_THREADS_NUM = 1024;
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
@@ -95,8 +95,8 @@ public class Main {
          * Decide Schema and Types
          *---------------------------------------------------------*/
 
-        RecordType sourceSchema;
-        RecordType sinkSchema;
+        Schema sourceSchema;
+        Schema sinkSchema;
         if (source instanceof SchemalessSource && sink instanceof SchemalessSink) {
             logger.error("At least one of source or sink should be with schema");
             return;
@@ -118,8 +118,11 @@ public class Main {
         logger.info("Data source schema: " + sourceSchema.toString());
         logger.info("Data sink schema: " + sinkSchema.toString());
 
-        // Convert source data to sink schema
-        RecordConvertor recordConvertor = new RecordConvertor(sourceSchema, sinkSchema);
+        try {
+            SchemaUtils.checkCompatible(sourceSchema, sinkSchema);
+        } catch (IncompatibleSchemaException e) {
+            logger.error("Schema not compatible: {}", e.getMessage());
+        }
 
         /*----------------------------------------------------------
          * Execute Pipelines in Multi-Threads
@@ -132,23 +135,31 @@ public class Main {
             new LinkedBlockingQueue<>(),
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("Pipeline-%d").build());
 
+        logger.info("Thread pool initialized. {} threads at most", conf.getGeneral().getThreads());
+
         // fatalError also helps stop all threads when a fatal error happens on one of the threads
         AtomicReference<Throwable> fatalError = new AtomicReference<>();
         List<Future<PipelineResult>> futures = new ArrayList<>();
 
-        // num of pipeline is determined by num of source partitions
-        List<SourceReader> readers = source.createReaders();
-        List<SinkWriter> writers = sink.createWriters(readers.size());
-        logger.info("The task is partitioned into {} pipelines executed by {} threads",
-            readers.size(), conf.getGeneral().getThreads());
+        // Create pipelines for each table in data source
+        for (Table sourceTable : sourceSchema.getTables()) {
+            final Table sinkTable = sinkSchema.getTable(sourceTable.getName());
+            assert sinkTable != null; // already checked
 
-        for (int i = 0; i < readers.size(); i++) {
-            RecordBatchConvertor convertor = new RecordBatchConvertor(recordConvertor);
-            Pipeline task = new Pipeline(i, readers.get(i), writers.get(i), convertor, fatalError);
-            futures.add(threadPool.submit(task));
+            // Num of pipeline is determined by num of source partitions
+            Iterable<SourceReader> readers = source.createReaders(sourceTable);
+            RecordConvertor convertor = new RecordConvertor(sourceTable.getType(), sinkTable.getType());
+
+            int count = 0;
+            for (SourceReader reader : readers) {
+                SinkWriter writer = sink.createWriter(sinkTable);
+                Pipeline task = new Pipeline(count++, reader, writer, convertor, fatalError);
+                futures.add(threadPool.submit(task));
+            }
+            logger.info("{} pipelines created for table {}", count, sourceTable.getName());
         }
 
-        logger.info("All pipelines started");
+        logger.info("All pipelines created");
 
         List<PipelineResult> results = new ArrayList<>();
         for (Future<PipelineResult> future : futures) {

@@ -1,6 +1,6 @@
 package me.ericfu.lightning.source;
 
-import me.ericfu.lightning.schema.RecordType;
+import me.ericfu.lightning.schema.Schema;
 
 /**
  * Schemaless data source
@@ -10,6 +10,6 @@ public interface SchemalessSource extends Source {
     /**
      * Set a required schema. Should be invoked after initialized
      */
-    void provideSchema(RecordType schema);
+    void provideSchema(Schema schema);
 
 }

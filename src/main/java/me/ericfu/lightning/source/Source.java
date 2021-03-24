@@ -1,9 +1,8 @@
 package me.ericfu.lightning.source;
 
 import me.ericfu.lightning.exception.DataSourceException;
-import me.ericfu.lightning.schema.RecordType;
-
-import java.util.List;
+import me.ericfu.lightning.schema.Schema;
+import me.ericfu.lightning.schema.Table;
 
 /**
  * Data source
@@ -15,11 +14,11 @@ public interface Source {
     /**
      * Get the table schema. Should be invoked after initialized
      */
-    RecordType getSchema();
+    Schema getSchema();
 
     /**
      * Create readers
      */
-    List<SourceReader> createReaders();
+    Iterable<SourceReader> createReaders(Table table);
 
 }

@@ -2,6 +2,7 @@ package me.ericfu.lightning.pipeline;
 
 import me.ericfu.lightning.data.RecordBatch;
 import me.ericfu.lightning.schema.RecordBatchConvertor;
+import me.ericfu.lightning.schema.RecordConvertor;
 import me.ericfu.lightning.sink.SinkWriter;
 import me.ericfu.lightning.source.SourceReader;
 import org.slf4j.Logger;
@@ -24,12 +25,12 @@ public class Pipeline implements Callable<PipelineResult> {
     private final RecordBatchConvertor convertor;
     private final AtomicReference<Throwable> fatalError;
 
-    public Pipeline(int no, SourceReader source, SinkWriter sink, RecordBatchConvertor convertor,
+    public Pipeline(int no, SourceReader source, SinkWriter sink, RecordConvertor convertor,
                     AtomicReference<Throwable> fatalError) {
         this.no = no;
         this.source = source;
         this.sink = sink;
-        this.convertor = convertor;
+        this.convertor = new RecordBatchConvertor(convertor);
         this.fatalError = fatalError;
     }
 

@@ -5,6 +5,7 @@ import me.ericfu.lightning.data.Record;
 import me.ericfu.lightning.data.RecordBatch;
 import me.ericfu.lightning.data.RecordBatchBuilder;
 import me.ericfu.lightning.exception.DataSourceException;
+import me.ericfu.lightning.schema.RecordType;
 import me.ericfu.lightning.source.SourceReader;
 
 import java.io.BufferedInputStream;
@@ -15,6 +16,7 @@ import java.io.IOException;
 public class TextSourceReader implements SourceReader {
 
     private final TextSource s;
+    private final RecordType type;
 
     /**
      * file must be a normal file, not a directory
@@ -25,8 +27,9 @@ public class TextSourceReader implements SourceReader {
     private TextValueReader valueReader;
     private RecordBatchBuilder builder;
 
-    public TextSourceReader(TextSource s, File file) {
+    public TextSourceReader(TextSource s, RecordType type, File file) {
         this.s = s;
+        this.type = type;
         this.file = file;
     }
 
@@ -72,22 +75,22 @@ public class TextSourceReader implements SourceReader {
     }
 
     private Record readNextRow() throws IOException {
-        Object[] values = new Object[s.schema.getFieldCount()];
-        for (int i = 0; i < s.schema.getFieldCount(); i++) {
+        Object[] values = new Object[type.getFieldCount()];
+        for (int i = 0; i < type.getFieldCount(); i++) {
             ByteString value = valueReader.readString();
             if (value == null) {
                 return null;
             }
 
-            if (i == s.schema.getFieldCount() - 1 && !valueReader.isEndWithNewLine()) {
+            if (i == type.getFieldCount() - 1 && !valueReader.isEndWithNewLine()) {
                 throw new IOException("bad format: expect new-line");
-            } else if (i < s.schema.getFieldCount() - 1 && !valueReader.isEndWithSeparator()) {
+            } else if (i < type.getFieldCount() - 1 && !valueReader.isEndWithSeparator()) {
                 throw new IOException("bad format: expect separator");
             }
             values[i] = value;
             valueReader.reset();
         }
-        return new Record(s.schema, values);
+        return new Record(type, values);
     }
 
     public void close() throws DataSourceException {

@@ -26,30 +26,6 @@ public final class RootConf {
     @NotNull
     private SinkConf sink;
 
-    public GeneralConf getGeneral() {
-        return general;
-    }
-
-    public void setGeneral(GeneralConf general) {
-        this.general = general;
-    }
-
-    public SourceConf getSource() {
-        return source;
-    }
-
-    public void setSource(SourceConf source) {
-        this.source = source;
-    }
-
-    public SinkConf getSink() {
-        return sink;
-    }
-
-    public void setSink(SinkConf sink) {
-        this.sink = sink;
-    }
-
     /**
      * Do validations according to the constraints annotated
      *

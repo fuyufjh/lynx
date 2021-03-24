@@ -1,13 +1,9 @@
 package me.ericfu.lightning.source.text;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import me.ericfu.lightning.conf.GeneralConf;
 import me.ericfu.lightning.exception.DataSourceException;
-import me.ericfu.lightning.schema.BasicType;
-import me.ericfu.lightning.schema.Field;
-import me.ericfu.lightning.schema.RecordType;
-import me.ericfu.lightning.schema.RecordTypeBuilder;
+import me.ericfu.lightning.schema.*;
 import me.ericfu.lightning.source.SchemalessSource;
 import me.ericfu.lightning.source.SourceReader;
 import org.slf4j.Logger;
@@ -26,7 +22,7 @@ public class TextSource implements SchemalessSource {
     final TextSourceConf conf;
 
     byte sep;
-    RecordType schema;
+    Schema schema;
     List<File> files;
 
     public TextSource(GeneralConf globals, TextSourceConf conf) {
@@ -34,18 +30,22 @@ public class TextSource implements SchemalessSource {
         this.conf = conf;
     }
 
-    public void provideSchema(RecordType schema) {
-        RecordTypeBuilder builder = new RecordTypeBuilder();
-        for (Field field : schema.getFields()) {
-            // Always provide strings regardless of the requested type
-            builder.addField(field.getName(), BasicType.STRING);
+    public void provideSchema(Schema schema) {
+        SchemaBuilder sb = new SchemaBuilder();
+        for (Table t : schema.getTables()) {
+            RecordTypeBuilder builder = new RecordTypeBuilder();
+            for (Field field : t.getType().getFields()) {
+                // Always provide strings regardless of the requested type
+                builder.addField(field.getName(), BasicType.STRING);
+            }
+            RecordType type = builder.build();
+            sb.addTable(new Table(t.getName(), type));
         }
-        this.schema = builder.build();
+        this.schema = sb.build();
     }
 
     @Override
-    public RecordType getSchema() {
-        Preconditions.checkState(schema != null);
+    public Schema getSchema() {
         return schema;
     }
 
@@ -77,9 +77,9 @@ public class TextSource implements SchemalessSource {
     }
 
     @Override
-    public List<SourceReader> createReaders() {
+    public Iterable<SourceReader> createReaders(Table table) {
         return files.stream()
-            .map(f -> new TextSourceReader(this, f))
+            .map(f -> new TextSourceReader(this, table.getType(), f))
             .collect(Collectors.toList());
     }
 }

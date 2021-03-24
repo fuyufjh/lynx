@@ -1,9 +1,8 @@
 package me.ericfu.lightning.sink;
 
 import me.ericfu.lightning.exception.DataSinkException;
-import me.ericfu.lightning.schema.RecordType;
-
-import java.util.List;
+import me.ericfu.lightning.schema.Schema;
+import me.ericfu.lightning.schema.Table;
 
 public interface Sink {
 
@@ -12,7 +11,7 @@ public interface Sink {
     /**
      * Get schema. Should be invoked after initialized
      */
-    RecordType getSchema();
+    Schema getSchema();
 
-    List<SinkWriter> createWriters(int n);
+    SinkWriter createWriter(Table table);
 }

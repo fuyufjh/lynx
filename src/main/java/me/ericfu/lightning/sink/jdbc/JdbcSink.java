@@ -2,19 +2,16 @@ package me.ericfu.lightning.sink.jdbc;
 
 import me.ericfu.lightning.conf.GeneralConf;
 import me.ericfu.lightning.exception.DataSinkException;
-import me.ericfu.lightning.schema.BasicType;
-import me.ericfu.lightning.schema.Field;
-import me.ericfu.lightning.schema.RecordType;
-import me.ericfu.lightning.schema.RecordTypeBuilder;
+import me.ericfu.lightning.schema.*;
 import me.ericfu.lightning.sink.Sink;
 import me.ericfu.lightning.sink.SinkWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class JdbcSink implements Sink {
 
@@ -23,8 +20,12 @@ public class JdbcSink implements Sink {
     final GeneralConf globals;
     final JdbcSinkConf conf;
 
-    RecordType schema;
-    String insertTemplate;
+    Schema schema;
+
+    /**
+     * Insert statement templates for each table
+     */
+    Map<String, String> insertTemplates;
 
     public JdbcSink(GeneralConf globals, JdbcSinkConf conf) {
         this.globals = globals;
@@ -34,45 +35,53 @@ public class JdbcSink implements Sink {
     @Override
     public void init() throws DataSinkException {
         // Fetch schema via JDBC metadata interface
-        RecordTypeBuilder schemaBuilder = new RecordTypeBuilder();
+        Map<String, RecordTypeBuilder> recordTypeBuilders = new HashMap<>();
         try {
             Connection connection = DriverManager.getConnection(conf.getUrl(), conf.getUser(), conf.getPassword());
 
             // Extract schema from target table
-            DatabaseMetaData dbmd = connection.getMetaData();
-            try (ResultSet rs = dbmd.getColumns(null, null, conf.getTable(), null)) {
+            DatabaseMetaData meta = connection.getMetaData();
+            try (ResultSet rs = meta.getColumns(null, null, conf.getTable(), null)) {
                 while (rs.next()) {
+                    String tableName = rs.getString("TABLE_NAME");
                     String columnName = rs.getString("COLUMN_NAME");
                     int jdbcType = rs.getInt("DATA_TYPE");
                     BasicType dataType = JdbcUtils.convertJdbcType(jdbcType);
-                    schemaBuilder.addField(columnName, dataType);
+
+                    RecordTypeBuilder r = recordTypeBuilders.computeIfAbsent(tableName, t -> new RecordTypeBuilder());
+                    r.addField(columnName, dataType);
                 }
             }
         } catch (SQLException ex) {
             throw new DataSinkException("cannot fetch metadata", ex);
         }
+
+        SchemaBuilder schemaBuilder = new SchemaBuilder();
+        recordTypeBuilders.forEach((name, builder) -> {
+            Table table = new Table(name, builder.build());
+            schemaBuilder.addTable(table);
+        });
         schema = schemaBuilder.build();
 
         // build insert statement template
-        insertTemplate = buildInsertTemplate();
+        insertTemplates = schema.getTables().stream()
+            .collect(Collectors.toMap(Table::getName, t -> buildInsertTemplate(t.getType())));
     }
 
     @Override
-    public RecordType getSchema() {
+    public Schema getSchema() {
         return schema;
     }
 
     @Override
-    public List<SinkWriter> createWriters(int partitions) {
-        return IntStream.range(0, partitions)
-            .mapToObj(i -> new JdbcSinkWriter(this))
-            .collect(Collectors.toList());
+    public SinkWriter createWriter(Table table) {
+        return new JdbcSinkWriter(this, table);
     }
 
-    private String buildInsertTemplate() {
-        String fieldList = schema.getFields().stream().map(Field::getName)
+    private String buildInsertTemplate(RecordType type) {
+        String fieldList = type.getFields().stream().map(Field::getName)
             .collect(Collectors.joining(",", "(", ")"));
-        String valueList = schema.getFields().stream().map(x -> "?")
+        String valueList = type.getFields().stream().map(x -> "?")
             .collect(Collectors.joining(",", "(", ")"));
         return "INSERT INTO " + conf.getTable() + fieldList + " VALUES " + valueList;
     }

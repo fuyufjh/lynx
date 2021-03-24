@@ -1,6 +1,6 @@
 package me.ericfu.lightning.schema;
 
-public class Field {
+public final class Field {
 
     private final int ordinal;
     private final String name;
