@@ -13,6 +13,8 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TextSink implements SchemalessSink {
 
@@ -22,8 +24,12 @@ public class TextSink implements SchemalessSink {
     final TextSinkConf conf;
 
     Schema schema;
-    int writerCount = 0;
     Charset charset;
+
+    /**
+     * Count of writers for each table
+     */
+    Map<String, Integer> writerCount = new HashMap<>();
 
     public TextSink(GeneralConf globals, TextSinkConf conf) {
         this.globals = globals;
@@ -36,11 +42,11 @@ public class TextSink implements SchemalessSink {
         if (!dir.exists()) {
             logger.info("Path '" + conf.getPath() + "' not exist and will be created");
             if (!dir.mkdirs()) {
-                throw new DataSinkException("cannot create directory");
+                throw new DataSinkException("cannot create directory " + dir.getPath());
             }
         }
         if (!dir.isDirectory()) {
-            throw new DataSinkException("path is not directory");
+            throw new DataSinkException(dir.getPath() + " is not directory");
         }
 
         charset = Charset.forName(conf.getEncoding());
@@ -58,7 +64,8 @@ public class TextSink implements SchemalessSink {
 
     @Override
     public SinkWriter createWriter(Table table) {
-        String fileName = String.format("%d.txt", writerCount++);
+        int partition = writerCount.compute(table.getName(), (name, count) -> count == null ? 0 : count + 1);
+        String fileName = String.format("%s/%d.txt", table.getName(), partition);
         Path targetPath = Paths.get(conf.getPath(), fileName);
         return new TextSinkWriter(this, targetPath.toFile(), table, charset);
     }

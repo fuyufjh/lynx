@@ -36,8 +36,16 @@ public class TextSinkWriter implements SinkWriter {
 
     @Override
     public void open() throws DataSinkException {
+        // Create upper-level directory
+        synchronized (s) {
+            if (!file.getParentFile().exists()) {
+                if (!file.getParentFile().mkdirs()) {
+                    throw new DataSinkException("cannot create directory " + file.getParent());
+                }
+            }
+        }
         if (file.exists()) {
-            logger.warn("File '" + file.getPath() + "' exists. Original content will be cleared");
+            throw new DataSinkException("File '" + file.getPath() + "' exists");
         }
         try {
             out = new BufferedOutputStream(new FileOutputStream(file));

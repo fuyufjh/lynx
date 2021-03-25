@@ -16,12 +16,15 @@ public class RecordBuilder {
 
     public void set(String field, Object value) {
         final Field f = type.getField(field);
-        assert f.getType().isInstance(value);
+        assert f.getType().isInstance(value) :
+            "type mismatch: expect " + f.getType().getClazz().getName() + " but got " + value.getClass().getName();
         values[f.getOrdinal()] = value;
     }
 
     public void set(int ordinal, Object value) {
-        assert type.getField(ordinal).getType().isInstance(value);
+        final Field f = type.getField(ordinal);
+        assert f.getType().isInstance(value) :
+            "type mismatch: expect " + f.getType().getClazz().getName() + " but got " + value.getClass().getName();
         values[ordinal] = value;
     }
 

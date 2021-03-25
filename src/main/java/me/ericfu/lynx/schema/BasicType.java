@@ -47,6 +47,10 @@ public enum BasicType {
         this.clazz = clazz;
     }
 
+    public Class<?> getClazz() {
+        return clazz;
+    }
+
     public boolean isInstance(Object value) {
         return clazz.isInstance(value);
     }

@@ -56,10 +56,10 @@ public class RandomSource implements Source {
 
     @Override
     public List<SourceReader> createReaders(Table table) {
-        long[] cut = accumulate(split(conf.getRecords(), globals.getThreads()));
+        int[] cut = accumulate(split(conf.getRecords(), globals.getThreads()));
         return IntStream.range(0, globals.getThreads()).mapToObj(i -> {
-            long start = i > 0 ? cut[i - 1] : 0;
-            long end = cut[i];
+            int start = i > 0 ? cut[i - 1] : 0;
+            int end = cut[i];
             return new RandomSourceReader(this, table, start, end);
         }).collect(Collectors.toList());
     }
@@ -73,17 +73,17 @@ public class RandomSource implements Source {
      * @param n number of parts N
      * @return the best split results
      */
-    private static long[] split(long x, int n) {
-        long[] result = new long[n];
-        long r = n - (x % n);
-        long d = x / n;
+    private static int[] split(int x, int n) {
+        int[] result = new int[n];
+        int r = n - (x % n);
+        int d = x / n;
         for (int i = 0; i < n; i++) {
             result[i] = i >= r ? d + 1 : d;
         }
         return result;
     }
 
-    private static long[] accumulate(long[] values) {
+    private static int[] accumulate(int[] values) {
         for (int i = 1; i < values.length; i++) {
             values[i] += values[i - 1];
         }

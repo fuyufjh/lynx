@@ -166,7 +166,7 @@ public class Main {
             try {
                 results.add(future.get());
             } catch (InterruptedException | ExecutionException ex) {
-                logger.error("Fatal error", ex);
+                logger.error("Fatal error", ex.getCause());
                 return;
             }
         }

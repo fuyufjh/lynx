@@ -17,14 +17,14 @@ public class RandomSourceReader implements SourceReader {
 
     private final RandomSource s;
     private final Table table;
-    private final long end;
-    private long current;
+    private final int end;
+    private int current;
 
     private RecordBatchBuilder builder;
     private Random random;
     private RandomGenerator[] generators;
 
-    public RandomSourceReader(RandomSource s, Table table, long start, long end) {
+    public RandomSourceReader(RandomSource s, Table table, int start, int end) {
         this.s = s;
         this.table = table;
         this.current = start;
@@ -56,7 +56,7 @@ public class RandomSourceReader implements SourceReader {
             if (code == null) {
                 generators[i] = createDefaultGenerator(field);
             } else {
-                generators[i] = new RandomGeneratorCompiler().compile(code);
+                generators[i] = new RandomGeneratorCompiler().compile(code, field.getType().getClazz());
             }
         }
     }

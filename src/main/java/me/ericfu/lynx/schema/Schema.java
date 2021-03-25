@@ -30,8 +30,8 @@ public final class Schema {
 
     @Override
     public String toString() {
-        return tables.entrySet().stream()
-            .map(e -> e.getKey() + ": " + e.getValue())
+        return getTables().stream()
+            .map(t -> t.getName() + ": " + t.getType().toString())
             .collect(Collectors.joining(", ", "{ ", " }"));
     }
 }

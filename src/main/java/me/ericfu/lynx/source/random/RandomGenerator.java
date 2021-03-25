@@ -4,6 +4,6 @@ import java.util.Random;
 
 public interface RandomGenerator {
 
-    Object generate(long i, Random rand);
+    Object generate(int i, Random rand);
 
 }
