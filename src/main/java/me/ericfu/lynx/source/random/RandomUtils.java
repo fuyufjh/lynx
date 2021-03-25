@@ -16,7 +16,7 @@ abstract class RandomUtils {
      * @param len required length of string
      * @return generated random string in ByteString
      */
-    public static String createRandomAscii(Random r, int len) {
+    public static String randomAsciiString(Random r, int len) {
         byte[] buf = new byte[len];
         for (int i = 0; i < len; i++) {
             buf[i] = (byte) (0x20 + r.nextInt(0x7F - 0x20));
@@ -31,7 +31,7 @@ abstract class RandomUtils {
      * @param len required length of binary data
      * @return generated random data in ByteString
      */
-    public static ByteArray createRandomBinary(Random r, int len) {
+    public static ByteArray randomBinary(Random r, int len) {
         byte[] buf = new byte[len];
         r.nextBytes(buf);
         return new ByteArray(buf);

@@ -5,32 +5,37 @@ import me.ericfu.lynx.data.ByteArray;
 public enum BasicType {
 
     /**
-     * booleans
+     * boolean
      */
     BOOLEAN(Boolean.class),
 
     /**
-     * 64-bit signed ints
+     * 32-bit signed integer
      */
-    INT64(Long.class),
+    INT(Integer.class),
 
     /**
-     * IEEE 32-bit floating point values
+     * 64-bit signed integer
+     */
+    LONG(Long.class),
+
+    /**
+     * IEEE 32-bit floating-point number
      */
     FLOAT(Float.class),
 
     /**
-     * IEEE 64-bit floating point values
+     * IEEE 64-bit floating-point number
      */
     DOUBLE(Double.class),
 
     /**
-     * arbitrarily long strings
+     * unicode character sequence
      */
     STRING(String.class),
 
     /**
-     * arbitrarily long byte arrays
+     * sequence of bytes
      */
     BINARY(ByteArray.class),
 

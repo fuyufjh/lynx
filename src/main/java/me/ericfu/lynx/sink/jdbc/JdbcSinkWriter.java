@@ -60,7 +60,14 @@ public class JdbcSinkWriter implements SinkWriter {
                 ps.setNull(i, Types.BOOLEAN);
             }
             break;
-        case INT64:
+        case INT:
+            if (value != null) {
+                ps.setInt(i, (int) value);
+            } else {
+                ps.setNull(i, Types.INTEGER);
+            }
+            break;
+        case LONG:
             if (value != null) {
                 ps.setLong(i, (long) value);
             } else {

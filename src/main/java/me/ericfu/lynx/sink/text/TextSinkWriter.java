@@ -105,7 +105,10 @@ public class TextSinkWriter implements SinkWriter {
         case BOOLEAN:
             text = Boolean.toString((Boolean) v);
             break;
-        case INT64:
+        case INT:
+            text = Integer.toString((Integer) v);
+            break;
+        case LONG:
             text = Long.toString((Long) v);
             break;
         case FLOAT:

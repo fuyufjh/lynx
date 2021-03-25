@@ -13,7 +13,7 @@ import java.util.Random;
 
 public class RandomSourceReader implements SourceReader {
 
-    private static final int RANDOM_STRING_LENGTH = 20;
+    private static final int RAND_STRING_LENGTH = 10;
 
     private final RandomSource s;
     private final Table table;
@@ -86,17 +86,18 @@ public class RandomSourceReader implements SourceReader {
         switch (field.getType()) {
         case BOOLEAN:
             return (i, r) -> r.nextBoolean();
-        case INT64:
-            // TODO: INT32/INT64
-            return (i, r) -> (long) r.nextInt();
+        case INT:
+            return (i, r) -> r.nextInt();
+        case LONG:
+            return (i, r) -> r.nextLong();
         case FLOAT:
             return (i, r) -> r.nextFloat();
         case DOUBLE:
             return (i, r) -> r.nextDouble();
         case STRING:
-            return (i, r) -> RandomUtils.createRandomAscii(r, RANDOM_STRING_LENGTH);
+            return (i, r) -> RandomUtils.randomAsciiString(r, RAND_STRING_LENGTH);
         case BINARY:
-            return (i, r) -> RandomUtils.createRandomBinary(r, RANDOM_STRING_LENGTH);
+            return (i, r) -> RandomUtils.randomBinary(r, RAND_STRING_LENGTH);
         default:
             throw new AssertionError();
         }
