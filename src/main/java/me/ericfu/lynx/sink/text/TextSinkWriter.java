@@ -27,8 +27,9 @@ public class TextSinkWriter implements SinkWriter {
     private final byte[] sep;
     private final Charset charset;
 
-    private long startOffset;
     private CountingOutputStream out;
+    private long startOffset;
+    private long lastBatchOffset;
 
     public TextSinkWriter(TextSink s, File file, Table table, Charset charset) {
         this.s = s;
@@ -96,6 +97,14 @@ public class TextSinkWriter implements SinkWriter {
                 throw new DataSinkException(e);
             }
         }
+
+        try {
+            out.flush();
+        } catch (IOException e) {
+            throw new DataSinkException("flush failed", e);
+        }
+
+        this.lastBatchOffset = startOffset + out.getCount();
     }
 
     private void writeRecord(Record record) throws IOException {
@@ -178,7 +187,7 @@ public class TextSinkWriter implements SinkWriter {
     @Override
     public SinkCheckpoint checkpoint() {
         Checkpoint cp = new Checkpoint();
-        cp.setFileOffset(out.getCount());
+        cp.setFileOffset(lastBatchOffset);
         return cp;
     }
 

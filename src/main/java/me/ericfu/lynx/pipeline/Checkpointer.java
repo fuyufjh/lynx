@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -35,27 +36,58 @@ public class Checkpointer implements Runnable {
         }
 
         try {
-            doCheckpoint();
+            saveCheckpoint();
         } catch (Exception e) {
             logger.error("Checkpoint failed", e);
             // notify other tasks to stop
-            fatalError.compareAndSet(null, new CheckpointException(e));
+            fatalError.compareAndSet(null, e);
         }
     }
 
-    private synchronized void doCheckpoint() throws IOException {
+    public synchronized void saveCheckpoint() throws CheckpointException {
         RootCheckpoint cp = new RootCheckpoint();
         cp.setCheckpoints(taskboard.getSchemaPipelines().entrySet().stream().collect(Collectors.toMap(
             e -> e.getKey(),
-            e -> e.getValue().stream().map(Pipeline::checkpoint).collect(Collectors.toList())
+            e -> e.getValue().stream().map(Pipeline::getCheckpoint).collect(Collectors.toList())
         )));
 
-        // Write into a temp file and then rename can ensure atomicity
-        File tempFile = File.createTempFile("temp-", ".lynx", file.getParentFile());
+        try {
+            // Write into a temp file and then rename can ensure atomicity
+            File tempFile = File.createTempFile("temp-", ".lynx", file.getParentFile());
 
-        mapper.writeValue(tempFile, cp);
-        if (!tempFile.renameTo(file)) {
-            throw new IOException("failed to rename '" + tempFile + "' to '" + file + "'");
+            mapper.writeValue(tempFile, cp);
+            if (!tempFile.renameTo(file)) {
+                throw new IOException("failed to rename '" + tempFile + "' to '" + file + "'");
+            }
+        } catch (IOException ex) {
+            throw new CheckpointException(ex);
+        }
+    }
+
+    public synchronized void loadCheckpoint() throws CheckpointException {
+        if (!file.exists()) {
+            return;
+        }
+
+        RootCheckpoint root;
+        try {
+            root = mapper.readValue(file, RootCheckpoint.class);
+        } catch (IOException e) {
+            throw new CheckpointException(e);
+        }
+
+        for (String schema : root.getCheckpoints().keySet()) {
+            List<Pipeline.Checkpoint> checkpoints = root.getCheckpoints().get(schema);
+            List<Pipeline> pipelines = taskboard.getSchemaPipelines().get(schema);
+            if (pipelines.isEmpty()) {
+                throw new CheckpointException("unknown schema '" + schema + "' in checkpoint");
+            }
+            if (pipelines.size() != checkpoints.size()) {
+                throw new CheckpointException("number of pipelines mismatch");
+            }
+            for (int i = 0; i < checkpoints.size(); i++) {
+                pipelines.get(i).setCheckpoint(checkpoints.get(i));
+            }
         }
     }
 }

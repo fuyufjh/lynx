@@ -30,6 +30,8 @@ public class Pipeline implements Callable<PipelineResult> {
     private final RecordBatchConvertor convertor;
     private final AtomicReference<Throwable> fatalError;
 
+    private volatile Checkpoint checkpoint = new Checkpoint();
+
     public Pipeline(String name, int part, SourceReader source, SinkWriter sink, RecordConvertor convertor,
                     AtomicReference<Throwable> fatalError) {
         this.name = name;
@@ -43,8 +45,17 @@ public class Pipeline implements Callable<PipelineResult> {
     @Override
     public PipelineResult call() throws Exception {
         try {
-            source.open();
-            sink.open();
+            if (checkpoint.source == null) {
+                source.open();
+            } else {
+                source.open(checkpoint.source);
+            }
+
+            if (checkpoint.sink == null) {
+                sink.open();
+            } else {
+                sink.open(checkpoint.sink);
+            }
 
             long count = 0;
             RecordBatch batch;
@@ -52,6 +63,12 @@ public class Pipeline implements Callable<PipelineResult> {
                 count += batch.size();
                 batch = convertor.convert(batch);
                 sink.writeBatch(batch);
+
+                // Update checkpoint after each batch
+                Checkpoint cp = new Checkpoint();
+                cp.setSource(source.checkpoint());
+                cp.setSink(sink.checkpoint());
+                this.checkpoint = cp;
             }
             return new PipelineResult(count);
 
@@ -79,11 +96,18 @@ public class Pipeline implements Callable<PipelineResult> {
         return fatalError.get() == null;
     }
 
-    public Checkpoint checkpoint() {
-        Checkpoint cp = new Checkpoint();
-        cp.setSource(source.checkpoint());
-        cp.setSink(sink.checkpoint());
-        return cp;
+    /**
+     * Get a latest checkpoint from pipeline. By design this method may be called by checkpoint thread
+     */
+    public Checkpoint getCheckpoint() {
+        return checkpoint;
+    }
+
+    /**
+     * Set initial checkpoint before pipeline initialized
+     */
+    public void setCheckpoint(Checkpoint checkpoint) {
+        this.checkpoint = checkpoint;
     }
 
     @Data

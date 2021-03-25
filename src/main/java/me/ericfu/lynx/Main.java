@@ -158,6 +158,22 @@ public class Main {
         TaskBoard taskBoard = taskBoardBuilder.build();
         logger.info("All pipelines created");
 
+        Checkpointer checkpointer;
+        if (conf.getGeneral().getCheckpointFile() != null) {
+            File checkpointFile = new File(conf.getGeneral().getCheckpointFile());
+            checkpointer = new Checkpointer(taskBoard, checkpointFile, fatalError);
+            try {
+                checkpointer.loadCheckpoint();
+            } catch (Exception e) {
+                logger.error("Failed to load checkpoint file '" + conf.getGeneral().getCheckpointFile() + "'", e);
+                return;
+            }
+            logger.info("Checkpoint loaded successfully");
+        } else {
+            checkpointer = null;
+            logger.warn("Checkpoint is disabled");
+        }
+
         /*----------------------------------------------------------
          * Execute Pipelines in Parallel
          *---------------------------------------------------------*/
@@ -174,16 +190,11 @@ public class Main {
 
         logger.info("Thread pool initialized. {} threads at most", conf.getGeneral().getThreads());
 
-        Checkpointer checkpointer;
-        if (conf.getGeneral().getCheckpointFile() != null) {
-            File checkpointFile = new File(conf.getGeneral().getCheckpointFile());
-            int interval = conf.getGeneral().getCheckpointInterval();
-            checkpointer = new Checkpointer(taskBoard, checkpointFile, fatalError);
-            scheduledExecutor.scheduleAtFixedRate(checkpointer, interval, interval, TimeUnit.SECONDS);
+        if (checkpointer != null) {
+            scheduledExecutor.scheduleAtFixedRate(checkpointer,
+                conf.getGeneral().getCheckpointInterval(),
+                conf.getGeneral().getCheckpointInterval(), TimeUnit.SECONDS);
             logger.info("Checkpoint task scheduled");
-        } else {
-            checkpointer = null;
-            logger.warn("Checkpoint is disabled");
         }
 
         for (Pipeline pipeline : taskBoard.getPipelines()) {
