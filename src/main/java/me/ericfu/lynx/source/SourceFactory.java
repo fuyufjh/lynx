@@ -1,7 +1,7 @@
 package me.ericfu.lynx.source;
 
-import me.ericfu.lynx.conf.GeneralConf;
-import me.ericfu.lynx.conf.SourceConf;
+import me.ericfu.lynx.model.conf.GeneralConf;
+import me.ericfu.lynx.model.conf.SourceConf;
 import me.ericfu.lynx.source.random.RandomSource;
 import me.ericfu.lynx.source.random.RandomSourceConf;
 import me.ericfu.lynx.source.text.TextSource;

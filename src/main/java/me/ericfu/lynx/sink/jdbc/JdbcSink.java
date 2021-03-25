@@ -1,7 +1,7 @@
 package me.ericfu.lynx.sink.jdbc;
 
-import me.ericfu.lynx.conf.GeneralConf;
 import me.ericfu.lynx.exception.DataSinkException;
+import me.ericfu.lynx.model.conf.GeneralConf;
 import me.ericfu.lynx.schema.*;
 import me.ericfu.lynx.sink.Sink;
 import me.ericfu.lynx.sink.SinkWriter;
@@ -83,6 +83,6 @@ public class JdbcSink implements Sink {
             .collect(Collectors.joining(",", "(", ")"));
         String valueList = type.getFields().stream().map(x -> "?")
             .collect(Collectors.joining(",", "(", ")"));
-        return "INSERT INTO " + conf.getTable() + fieldList + " VALUES " + valueList;
+        return "INSERT IGNORE INTO " + conf.getTable() + fieldList + " VALUES " + valueList;
     }
 }

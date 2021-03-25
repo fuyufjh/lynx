@@ -2,10 +2,10 @@ package me.ericfu.lynx.source.text;
 
 import com.google.common.base.Preconditions;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 
 /**
@@ -17,7 +17,7 @@ final class TextValueReader {
         NEW_LINE, SEPARATOR, EOF
     }
 
-    private final BufferedInputStream in;
+    private final InputStream in;
     private final Charset charset;
     private final ByteArrayOutputStream out;
     private final int sep;
@@ -25,7 +25,7 @@ final class TextValueReader {
     private int line;
     private EndWith end;
 
-    public TextValueReader(BufferedInputStream in, Charset charset, byte separator) {
+    public TextValueReader(InputStream in, Charset charset, byte separator) {
         this.in = in;
         this.charset = charset;
         this.out = new ByteArrayOutputStream();

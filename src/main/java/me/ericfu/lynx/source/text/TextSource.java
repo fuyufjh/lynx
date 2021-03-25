@@ -1,8 +1,8 @@
 package me.ericfu.lynx.source.text;
 
 import com.google.common.collect.ImmutableList;
-import me.ericfu.lynx.conf.GeneralConf;
 import me.ericfu.lynx.exception.DataSourceException;
+import me.ericfu.lynx.model.conf.GeneralConf;
 import me.ericfu.lynx.schema.*;
 import me.ericfu.lynx.source.SchemalessSource;
 import me.ericfu.lynx.source.SourceReader;
@@ -81,7 +81,7 @@ public class TextSource implements SchemalessSource {
     }
 
     @Override
-    public Iterable<SourceReader> createReaders(Table table) {
+    public List<SourceReader> createReaders(Table table) {
         return files.stream()
             .map(f -> new TextSourceReader(this, table.getType(), f))
             .collect(Collectors.toList());

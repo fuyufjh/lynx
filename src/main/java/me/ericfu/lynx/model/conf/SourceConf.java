@@ -1,4 +1,4 @@
-package me.ericfu.lynx.conf;
+package me.ericfu.lynx.model.conf;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

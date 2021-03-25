@@ -1,7 +1,7 @@
 package me.ericfu.lynx.sink.text;
 
-import me.ericfu.lynx.conf.GeneralConf;
 import me.ericfu.lynx.exception.DataSinkException;
+import me.ericfu.lynx.model.conf.GeneralConf;
 import me.ericfu.lynx.schema.Schema;
 import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.sink.SchemalessSink;

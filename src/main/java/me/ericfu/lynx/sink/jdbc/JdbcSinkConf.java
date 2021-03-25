@@ -1,7 +1,7 @@
 package me.ericfu.lynx.sink.jdbc;
 
 import lombok.Data;
-import me.ericfu.lynx.conf.SinkConf;
+import me.ericfu.lynx.model.conf.SinkConf;
 
 import javax.validation.constraints.NotEmpty;
 

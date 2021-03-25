@@ -1,9 +1,12 @@
 package me.ericfu.lynx.sink.text;
 
+import com.google.common.io.CountingOutputStream;
+import lombok.Data;
 import me.ericfu.lynx.data.ByteArray;
 import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.exception.DataSinkException;
+import me.ericfu.lynx.model.checkpoint.SinkCheckpoint;
 import me.ericfu.lynx.schema.BasicType;
 import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.sink.SinkWriter;
@@ -24,7 +27,8 @@ public class TextSinkWriter implements SinkWriter {
     private final byte[] sep;
     private final Charset charset;
 
-    private BufferedOutputStream out;
+    private long startOffset;
+    private CountingOutputStream out;
 
     public TextSinkWriter(TextSink s, File file, Table table, Charset charset) {
         this.s = s;
@@ -36,6 +40,16 @@ public class TextSinkWriter implements SinkWriter {
 
     @Override
     public void open() throws DataSinkException {
+        doOpen(0);
+    }
+
+    @Override
+    public void open(SinkCheckpoint checkpoint) throws DataSinkException {
+        Checkpoint cp = (Checkpoint) checkpoint;
+        doOpen(cp.fileOffset);
+    }
+
+    private void doOpen(long offset) throws DataSinkException {
         // Create upper-level directory
         synchronized (s) {
             if (!file.getParentFile().exists()) {
@@ -44,14 +58,33 @@ public class TextSinkWriter implements SinkWriter {
                 }
             }
         }
-        if (file.exists()) {
-            throw new DataSinkException("File '" + file.getPath() + "' exists");
+        if (offset == 0) {
+            if (file.exists()) {
+                throw new DataSinkException("File '" + file.getPath() + "' exists");
+            }
+        } else {
+            if (!file.exists()) {
+                throw new DataSinkException("File '" + file.getPath() + "' not exists");
+            }
         }
+
+        FileOutputStream fos;
         try {
-            out = new BufferedOutputStream(new FileOutputStream(file));
+            fos = new FileOutputStream(file, offset > 0);
         } catch (FileNotFoundException e) {
             throw new DataSinkException("cannot open file", e);
         }
+
+        if (offset > 0) {
+            try {
+                fos.getChannel().truncate(offset);
+            } catch (IOException e) {
+                throw new DataSinkException("cannot truncate to checkpoint offset", e);
+            }
+        }
+
+        this.out = new CountingOutputStream(new BufferedOutputStream(fos));
+        this.startOffset = offset;
     }
 
     @Override
@@ -140,5 +173,17 @@ public class TextSinkWriter implements SinkWriter {
         } catch (IOException e) {
             throw new DataSinkException("cannot close file", e);
         }
+    }
+
+    @Override
+    public SinkCheckpoint checkpoint() {
+        Checkpoint cp = new Checkpoint();
+        cp.setFileOffset(out.getCount());
+        return cp;
+    }
+
+    @Data
+    public static class Checkpoint implements SinkCheckpoint {
+        private long fileOffset;
     }
 }

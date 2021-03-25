@@ -4,6 +4,8 @@ import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.schema.Schema;
 import me.ericfu.lynx.schema.Table;
 
+import java.util.List;
+
 /**
  * Data source
  */
@@ -19,6 +21,6 @@ public interface Source {
     /**
      * Create readers
      */
-    Iterable<SourceReader> createReaders(Table table);
+    List<SourceReader> createReaders(Table table);
 
 }

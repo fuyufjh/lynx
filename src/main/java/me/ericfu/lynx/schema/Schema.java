@@ -14,7 +14,7 @@ public final class Schema {
     /**
      * name to schema
      */
-    private final Map<String, Table> tables;
+    private final Map<String, Table> tables; // TODO: preserve order of tables
 
     Schema(Map<String, Table> ts) {
         this.tables = ImmutableMap.copyOf(ts);

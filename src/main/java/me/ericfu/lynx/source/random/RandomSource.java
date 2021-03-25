@@ -1,7 +1,7 @@
 package me.ericfu.lynx.source.random;
 
-import me.ericfu.lynx.conf.GeneralConf;
 import me.ericfu.lynx.exception.DataSourceException;
+import me.ericfu.lynx.model.conf.GeneralConf;
 import me.ericfu.lynx.schema.RecordTypeBuilder;
 import me.ericfu.lynx.schema.Schema;
 import me.ericfu.lynx.schema.SchemaBuilder;

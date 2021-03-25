@@ -1,7 +1,7 @@
 package me.ericfu.lynx.sink;
 
-import me.ericfu.lynx.conf.GeneralConf;
-import me.ericfu.lynx.conf.SinkConf;
+import me.ericfu.lynx.model.conf.GeneralConf;
+import me.ericfu.lynx.model.conf.SinkConf;
 import me.ericfu.lynx.sink.jdbc.JdbcSink;
 import me.ericfu.lynx.sink.jdbc.JdbcSinkConf;
 import me.ericfu.lynx.sink.text.TextSink;

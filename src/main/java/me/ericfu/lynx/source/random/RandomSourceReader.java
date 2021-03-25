@@ -1,10 +1,12 @@
 package me.ericfu.lynx.source.random;
 
+import lombok.Data;
 import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.data.RecordBatchBuilder;
 import me.ericfu.lynx.data.RecordBuilder;
 import me.ericfu.lynx.exception.DataSourceException;
+import me.ericfu.lynx.model.checkpoint.SourceCheckpoint;
 import me.ericfu.lynx.schema.Field;
 import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.source.SourceReader;
@@ -62,6 +64,14 @@ public class RandomSourceReader implements SourceReader {
     }
 
     @Override
+    public void open(SourceCheckpoint checkpoint) throws DataSourceException {
+        open();
+
+        Checkpoint cp = (Checkpoint) checkpoint;
+        this.current = cp.nextRowNum;
+    }
+
+    @Override
     public RecordBatch readBatch() throws DataSourceException {
         for (int i = 0; i < s.globals.getBatchSize() && current < end; i++, current++) {
             builder.addRow(buildRandomRecord());
@@ -106,5 +116,17 @@ public class RandomSourceReader implements SourceReader {
     @Override
     public void close() throws DataSourceException {
         // do nothing
+    }
+
+    @Override
+    public SourceCheckpoint checkpoint() {
+        Checkpoint cp = new Checkpoint();
+        cp.setNextRowNum(current);
+        return cp;
+    }
+
+    @Data
+    public static class Checkpoint implements SourceCheckpoint {
+        private int nextRowNum;
     }
 }

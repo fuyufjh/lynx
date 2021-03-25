@@ -1,7 +1,7 @@
 package me.ericfu.lynx.source.random;
 
 import lombok.Data;
-import me.ericfu.lynx.conf.SourceConf;
+import me.ericfu.lynx.model.conf.SourceConf;
 import me.ericfu.lynx.schema.BasicType;
 
 import javax.validation.constraints.NotEmpty;

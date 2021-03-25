@@ -1,9 +1,12 @@
 package me.ericfu.lynx.source.text;
 
+import com.google.common.io.CountingInputStream;
+import lombok.Data;
 import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.data.RecordBatchBuilder;
 import me.ericfu.lynx.exception.DataSourceException;
+import me.ericfu.lynx.model.checkpoint.SourceCheckpoint;
 import me.ericfu.lynx.schema.RecordType;
 import me.ericfu.lynx.source.SourceReader;
 
@@ -22,7 +25,7 @@ public class TextSourceReader implements SourceReader {
      */
     private final File file;
 
-    private BufferedInputStream in;
+    private CountingInputStream in;
     private TextValueReader valueReader;
     private RecordBatchBuilder builder;
 
@@ -44,13 +47,25 @@ public class TextSourceReader implements SourceReader {
         }
 
         try {
-            this.in = new BufferedInputStream(new FileInputStream(file));
+            this.in = new CountingInputStream(new BufferedInputStream(new FileInputStream(file)));
         } catch (IOException ex) {
             throw new DataSourceException(ex);
         }
 
         valueReader = new TextValueReader(in, s.charset, s.sep);
         builder = new RecordBatchBuilder(s.globals.getBatchSize());
+    }
+
+    @Override
+    public void open(SourceCheckpoint checkpoint) throws DataSourceException {
+        open();
+
+        Checkpoint cp = (Checkpoint) checkpoint;
+        try {
+            in.skip(cp.fileOffset);
+        } catch (IOException e) {
+            throw new DataSourceException("cannot seek to checkpoint offset " + cp.fileOffset);
+        }
     }
 
     public RecordBatch readBatch() throws DataSourceException {
@@ -98,5 +113,17 @@ public class TextSourceReader implements SourceReader {
         } catch (IOException ex) {
             throw new DataSourceException(ex);
         }
+    }
+
+    @Override
+    public SourceCheckpoint checkpoint() {
+        Checkpoint cp = new Checkpoint();
+        cp.setFileOffset(in.getCount());
+        return cp;
+    }
+
+    @Data
+    public static class Checkpoint implements SourceCheckpoint {
+        private long fileOffset;
     }
 }

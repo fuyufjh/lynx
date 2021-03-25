@@ -1,6 +1,9 @@
 package me.ericfu.lynx.pipeline;
 
+import lombok.Data;
 import me.ericfu.lynx.data.RecordBatch;
+import me.ericfu.lynx.model.checkpoint.SinkCheckpoint;
+import me.ericfu.lynx.model.checkpoint.SourceCheckpoint;
 import me.ericfu.lynx.schema.RecordBatchConvertor;
 import me.ericfu.lynx.schema.RecordConvertor;
 import me.ericfu.lynx.sink.SinkWriter;
@@ -19,15 +22,18 @@ public class Pipeline implements Callable<PipelineResult> {
 
     private static final Logger logger = LoggerFactory.getLogger(Pipeline.class);
 
-    private final int no;
+    private final String name;
+    private final int part;
+
     private final SourceReader source;
     private final SinkWriter sink;
     private final RecordBatchConvertor convertor;
     private final AtomicReference<Throwable> fatalError;
 
-    public Pipeline(int no, SourceReader source, SinkWriter sink, RecordConvertor convertor,
+    public Pipeline(String name, int part, SourceReader source, SinkWriter sink, RecordConvertor convertor,
                     AtomicReference<Throwable> fatalError) {
-        this.no = no;
+        this.name = name;
+        this.part = part;
         this.source = source;
         this.sink = sink;
         this.convertor = new RecordBatchConvertor(convertor);
@@ -71,5 +77,18 @@ public class Pipeline implements Callable<PipelineResult> {
 
     private boolean checkFatalError() {
         return fatalError.get() == null;
+    }
+
+    public Checkpoint checkpoint() {
+        Checkpoint cp = new Checkpoint();
+        cp.setSource(source.checkpoint());
+        cp.setSink(sink.checkpoint());
+        return cp;
+    }
+
+    @Data
+    public static class Checkpoint {
+        private SourceCheckpoint source;
+        private SinkCheckpoint sink;
     }
 }

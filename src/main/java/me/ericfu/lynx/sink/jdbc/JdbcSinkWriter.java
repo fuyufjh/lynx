@@ -4,6 +4,7 @@ import me.ericfu.lynx.data.ByteArray;
 import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.exception.DataSinkException;
+import me.ericfu.lynx.model.checkpoint.SinkCheckpoint;
 import me.ericfu.lynx.schema.Field;
 import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.sink.SinkWriter;
@@ -28,10 +29,16 @@ public class JdbcSinkWriter implements SinkWriter {
         String insertTemplate = s.insertTemplates.get(table.getName());
         try {
             connection = DriverManager.getConnection(s.conf.getUrl(), s.conf.getUser(), s.conf.getPassword());
+            connection.setAutoCommit(false);
             ps = connection.prepareStatement(insertTemplate);
         } catch (SQLException ex) {
             throw new DataSinkException(ex);
         }
+    }
+
+    @Override
+    public void open(SinkCheckpoint checkpoint) throws DataSinkException {
+        open();
     }
 
     @Override
@@ -46,6 +53,7 @@ public class JdbcSinkWriter implements SinkWriter {
                 ps.addBatch();
             }
             ps.executeBatch();
+            connection.commit();
         } catch (SQLException ex) {
             throw new DataSinkException(ex);
         }
@@ -116,5 +124,12 @@ public class JdbcSinkWriter implements SinkWriter {
         } catch (SQLException ex) {
             throw new DataSinkException(ex);
         }
+    }
+
+    @Override
+    public SinkCheckpoint checkpoint() {
+        // Returns an empty checkpoint because of nothing to save
+        return new SinkCheckpoint() {
+        };
     }
 }

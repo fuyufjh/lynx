@@ -3,10 +3,12 @@ package me.ericfu.lynx;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import me.ericfu.lynx.conf.RootConf;
 import me.ericfu.lynx.exception.IncompatibleSchemaException;
+import me.ericfu.lynx.model.conf.RootConf;
+import me.ericfu.lynx.pipeline.Checkpointer;
 import me.ericfu.lynx.pipeline.Pipeline;
 import me.ericfu.lynx.pipeline.PipelineResult;
+import me.ericfu.lynx.pipeline.TaskBoard;
 import me.ericfu.lynx.schema.RecordConvertor;
 import me.ericfu.lynx.schema.Schema;
 import me.ericfu.lynx.schema.SchemaUtils;
@@ -125,7 +127,39 @@ public class Main {
         }
 
         /*----------------------------------------------------------
-         * Execute Pipelines in Multi-Threads
+         * Prepare All Pipelines
+         *---------------------------------------------------------*/
+
+        // fatalError also helps stop all threads when a fatal error happens on one of the threads
+        AtomicReference<Throwable> fatalError = new AtomicReference<>();
+        List<Future<PipelineResult>> futures = new ArrayList<>();
+
+        TaskBoard.Builder taskBoardBuilder = new TaskBoard.Builder();
+
+        // Create pipelines for each table in data source
+        for (Table sourceTable : sourceSchema.getTables()) {
+            final Table sinkTable = sinkSchema.getTable(sourceTable.getName());
+            assert sinkTable != null; // already checked
+            taskBoardBuilder.setCurrentTable(sinkTable.getName());
+
+            // Num of pipeline is determined by num of source partitions
+            List<SourceReader> readers = source.createReaders(sourceTable);
+            RecordConvertor convertor = new RecordConvertor(sourceTable.getType(), sinkTable.getType());
+
+            int count = 0;
+            for (SourceReader reader : readers) {
+                SinkWriter writer = sink.createWriter(sinkTable);
+                Pipeline pipeline = new Pipeline(sourceTable.getName(), count++, reader, writer, convertor, fatalError);
+                taskBoardBuilder.addPipeline(pipeline);
+            }
+            logger.info("Table {}: {} pipelines created", sourceTable.getName(), count);
+        }
+
+        TaskBoard taskBoard = taskBoardBuilder.build();
+        logger.info("All pipelines created");
+
+        /*----------------------------------------------------------
+         * Execute Pipelines in Parallel
          *---------------------------------------------------------*/
 
         ThreadPoolExecutor threadPool = new ThreadPoolExecutor(
@@ -135,31 +169,26 @@ public class Main {
             new LinkedBlockingQueue<>(),
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("Pipeline-%d").build());
 
+        ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(2,
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("Scheduled-%d").build());
+
         logger.info("Thread pool initialized. {} threads at most", conf.getGeneral().getThreads());
 
-        // fatalError also helps stop all threads when a fatal error happens on one of the threads
-        AtomicReference<Throwable> fatalError = new AtomicReference<>();
-        List<Future<PipelineResult>> futures = new ArrayList<>();
-
-        // Create pipelines for each table in data source
-        for (Table sourceTable : sourceSchema.getTables()) {
-            final Table sinkTable = sinkSchema.getTable(sourceTable.getName());
-            assert sinkTable != null; // already checked
-
-            // Num of pipeline is determined by num of source partitions
-            Iterable<SourceReader> readers = source.createReaders(sourceTable);
-            RecordConvertor convertor = new RecordConvertor(sourceTable.getType(), sinkTable.getType());
-
-            int count = 0;
-            for (SourceReader reader : readers) {
-                SinkWriter writer = sink.createWriter(sinkTable);
-                Pipeline task = new Pipeline(count++, reader, writer, convertor, fatalError);
-                futures.add(threadPool.submit(task));
-            }
-            logger.info("{} pipelines created for table {}", count, sourceTable.getName());
+        Checkpointer checkpointer;
+        if (conf.getGeneral().getCheckpointFile() != null) {
+            File checkpointFile = new File(conf.getGeneral().getCheckpointFile());
+            int interval = conf.getGeneral().getCheckpointInterval();
+            checkpointer = new Checkpointer(taskBoard, checkpointFile, fatalError);
+            scheduledExecutor.scheduleAtFixedRate(checkpointer, interval, interval, TimeUnit.SECONDS);
+            logger.info("Checkpoint task scheduled");
+        } else {
+            checkpointer = null;
+            logger.warn("Checkpoint is disabled");
         }
 
-        logger.info("All pipelines created");
+        for (Pipeline pipeline : taskBoard.getPipelines()) {
+            futures.add(threadPool.submit(pipeline));
+        }
 
         List<PipelineResult> results = new ArrayList<>();
         for (Future<PipelineResult> future : futures) {
@@ -167,14 +196,20 @@ public class Main {
                 results.add(future.get());
             } catch (InterruptedException | ExecutionException ex) {
                 logger.error("Fatal error", ex.getCause());
-                return;
             }
         }
 
+        if (checkpointer != null) {
+            checkpointer.run();
+        }
+
         long totalRecords = results.stream().mapToLong(PipelineResult::getRecords).sum();
-        logger.info("All pipelines completed. {} records transferred in total", totalRecords);
+        if (fatalError.get() == null) {
+            logger.info("All pipelines completed. {} records transferred in total", totalRecords);
+        } else {
+            logger.error("All pipeline may not complete since some fatal error happened. {} records transferred", totalRecords);
+        }
 
         threadPool.shutdown();
-        logger.info("Bye!");
     }
 }
