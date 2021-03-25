@@ -1,8 +1,8 @@
-# Lightning
+# Lynx
 
-![overview](docs/images/lightning-overview.png)
+![overview](docs/images/lynx-overview.png)
 
-Lightning is a light-weight, command-line tool to transfer data between various structured or schemaless data sources.
+Lynx is a light-weight, command-line tool to transfer data between various structured or schemaless data sources.
 It can also be used as a data export/import tool, for example, with a relational database as data source,
 and text file as data sink, or vise versa. 
 
@@ -11,7 +11,7 @@ We are happy to see your contributions or suggestions.
 
 ## Quick Start
 
-Lightning relies on a configuration file in YAML. Here is an example.
+Lynx relies on a configuration file in YAML. Here is an example.
 
 ```yaml
 # example.yaml
@@ -29,10 +29,10 @@ sink:
   table: t1
 ``` 
 
-Then you can run Lightning from terminal.
+Then you can run Lynx from terminal.
 
 ```bash
-./lightning -c example.yaml
+./lynx -c example.yaml
 ```
 
 ## Contribution
