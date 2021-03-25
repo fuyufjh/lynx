@@ -20,4 +20,9 @@ public class TextSinkConf implements SinkConf {
     @NotEmpty
     private String separator = ",";
 
+    /**
+     * output file encoding
+     */
+    @NotEmpty
+    private String encoding = "utf-8"; // TODO: add validator
 }

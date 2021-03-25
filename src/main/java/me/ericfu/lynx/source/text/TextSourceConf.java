@@ -20,4 +20,9 @@ public class TextSourceConf implements SourceConf {
     @NotEmpty
     private String separator = ",";
 
+    /**
+     * input file encoding
+     */
+    @NotEmpty
+    private String encoding = "utf-8";
 }

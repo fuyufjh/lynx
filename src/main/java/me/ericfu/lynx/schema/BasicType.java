@@ -1,13 +1,16 @@
 package me.ericfu.lynx.schema;
 
-import me.ericfu.lynx.data.ByteString;
+import me.ericfu.lynx.data.ByteArray;
 
 public enum BasicType {
 
-    //TODO: BOOLEAN(Boolean.class),
+    /**
+     * booleans
+     */
+    BOOLEAN(Boolean.class),
 
     /**
-     * 64 bit signed ints
+     * 64-bit signed ints
      */
     INT64(Long.class),
 
@@ -22,9 +25,14 @@ public enum BasicType {
     DOUBLE(Double.class),
 
     /**
+     * arbitrarily long strings
+     */
+    STRING(String.class),
+
+    /**
      * arbitrarily long byte arrays
      */
-    STRING(ByteString.class), // TODO: split string and bytes
+    BINARY(ByteArray.class),
 
     ;
 

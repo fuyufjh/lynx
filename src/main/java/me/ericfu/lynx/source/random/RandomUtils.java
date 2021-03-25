@@ -1,6 +1,6 @@
 package me.ericfu.lynx.source.random;
 
-import me.ericfu.lynx.data.ByteString;
+import me.ericfu.lynx.data.ByteArray;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
@@ -16,12 +16,12 @@ abstract class RandomUtils {
      * @param len required length of string
      * @return generated random string in ByteString
      */
-    public static ByteString createRandomAscii(Random r, int len) {
+    public static String createRandomAscii(Random r, int len) {
         byte[] buf = new byte[len];
         for (int i = 0; i < len; i++) {
             buf[i] = (byte) (0x20 + r.nextInt(0x7F - 0x20));
         }
-        return new ByteString(buf, StandardCharsets.UTF_8);
+        return new String(buf, StandardCharsets.ISO_8859_1);
     }
 
     /**
@@ -31,10 +31,10 @@ abstract class RandomUtils {
      * @param len required length of binary data
      * @return generated random data in ByteString
      */
-    public static ByteString createRandomBinary(Random r, int len) {
+    public static ByteArray createRandomBinary(Random r, int len) {
         byte[] buf = new byte[len];
         r.nextBytes(buf);
-        return new ByteString(buf, ByteString.CHARSET_BINARY);
+        return new ByteArray(buf);
     }
 
 }

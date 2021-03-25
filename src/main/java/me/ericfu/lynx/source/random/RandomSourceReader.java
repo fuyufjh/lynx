@@ -84,6 +84,8 @@ public class RandomSourceReader implements SourceReader {
 
     private static RandomGenerator createDefaultGenerator(Field field) {
         switch (field.getType()) {
+        case BOOLEAN:
+            return (i, r) -> r.nextBoolean();
         case INT64:
             // TODO: INT32/INT64
             return (i, r) -> (long) r.nextInt();
@@ -92,8 +94,9 @@ public class RandomSourceReader implements SourceReader {
         case DOUBLE:
             return (i, r) -> r.nextDouble();
         case STRING:
-            // TODO: save precision/scale in Field and use it as string length
             return (i, r) -> RandomUtils.createRandomAscii(r, RANDOM_STRING_LENGTH);
+        case BINARY:
+            return (i, r) -> RandomUtils.createRandomBinary(r, RANDOM_STRING_LENGTH);
         default:
             throw new AssertionError();
         }

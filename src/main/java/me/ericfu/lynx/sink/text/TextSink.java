@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -22,6 +23,7 @@ public class TextSink implements SchemalessSink {
 
     Schema schema;
     int writerCount = 0;
+    Charset charset;
 
     public TextSink(GeneralConf globals, TextSinkConf conf) {
         this.globals = globals;
@@ -40,6 +42,8 @@ public class TextSink implements SchemalessSink {
         if (!dir.isDirectory()) {
             throw new DataSinkException("path is not directory");
         }
+
+        charset = Charset.forName(conf.getEncoding());
     }
 
     @Override
@@ -56,6 +60,6 @@ public class TextSink implements SchemalessSink {
     public SinkWriter createWriter(Table table) {
         String fileName = String.format("%d.txt", writerCount++);
         Path targetPath = Paths.get(conf.getPath(), fileName);
-        return new TextSinkWriter(this, targetPath.toFile(), table);
+        return new TextSinkWriter(this, targetPath.toFile(), table, charset);
     }
 }

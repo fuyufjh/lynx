@@ -1,6 +1,5 @@
 package me.ericfu.lynx.source.text;
 
-import me.ericfu.lynx.data.ByteString;
 import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.data.RecordBatchBuilder;
@@ -50,7 +49,7 @@ public class TextSourceReader implements SourceReader {
             throw new DataSourceException(ex);
         }
 
-        valueReader = new TextValueReader(in, s.sep);
+        valueReader = new TextValueReader(in, s.charset, s.sep);
         builder = new RecordBatchBuilder(s.globals.getBatchSize());
     }
 
@@ -77,7 +76,7 @@ public class TextSourceReader implements SourceReader {
     private Record readNextRow() throws IOException {
         Object[] values = new Object[type.getFieldCount()];
         for (int i = 0; i < type.getFieldCount(); i++) {
-            ByteString value = valueReader.readString();
+            String value = valueReader.readString();
             if (value == null) {
                 return null;
             }

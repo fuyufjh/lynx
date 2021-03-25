@@ -1,13 +1,12 @@
 package me.ericfu.lynx.source.text;
 
 import com.google.common.base.Preconditions;
-import me.ericfu.lynx.data.ByteString;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 
 /**
  * TextValueReader reads a single value from current InputStream
@@ -19,14 +18,16 @@ final class TextValueReader {
     }
 
     private final BufferedInputStream in;
+    private final Charset charset;
     private final ByteArrayOutputStream out;
     private final int sep;
 
     private int line;
     private EndWith end;
 
-    public TextValueReader(BufferedInputStream in, byte separator) {
+    public TextValueReader(BufferedInputStream in, Charset charset, byte separator) {
         this.in = in;
+        this.charset = charset;
         this.out = new ByteArrayOutputStream();
         this.sep = separator;
         this.line = 1;
@@ -37,7 +38,7 @@ final class TextValueReader {
      *
      * @return next value or null for EOF
      */
-    public ByteString readString() throws IOException {
+    public String readString() throws IOException {
         for (; ; ) {
             final int b = in.read();
             if (b < 0) {
@@ -59,10 +60,10 @@ final class TextValueReader {
                 out.write(b);
             }
         }
-        return new ByteString(out.toByteArray(), StandardCharsets.UTF_8);
+        return new String(out.toByteArray(), charset);
     }
 
-    private ByteString readQuotedString() throws IOException {
+    private String readQuotedString() throws IOException {
         int b;
         for (; ; ) {
             b = in.read();
@@ -88,7 +89,7 @@ final class TextValueReader {
             throw new IOException("expect new-line or separator but got '" + ((char) b) + "' at line " + line);
         }
 
-        return new ByteString(out.toByteArray(), StandardCharsets.UTF_8);
+        return new String(out.toByteArray(), charset);
     }
 
     /**

@@ -1,5 +1,6 @@
 package me.ericfu.lynx.sink.jdbc;
 
+import me.ericfu.lynx.data.ByteArray;
 import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.exception.DataSinkException;
@@ -52,6 +53,13 @@ public class JdbcSinkWriter implements SinkWriter {
 
     private void setFieldValue(int i, Field field, Object value) throws SQLException {
         switch (field.getType()) {
+        case BOOLEAN:
+            if (value != null) {
+                ps.setBoolean(i, (boolean) value);
+            } else {
+                ps.setNull(i, Types.BOOLEAN);
+            }
+            break;
         case INT64:
             if (value != null) {
                 ps.setLong(i, (long) value);
@@ -75,12 +83,19 @@ public class JdbcSinkWriter implements SinkWriter {
             break;
         case STRING:
             if (value != null) {
-                // TODO: improve performance and split binary/string
-                ps.setString(i, value.toString());
+                ps.setString(i, (String) value);
             } else {
                 ps.setNull(i, Types.VARCHAR);
             }
             break;
+        case BINARY:
+            if (value != null) {
+                ps.setBytes(i, ((ByteArray) value).getBytes());
+            } else {
+                ps.setNull(i, Types.BINARY);
+            }
+        default:
+            throw new AssertionError();
         }
     }
 

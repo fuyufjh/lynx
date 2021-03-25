@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ public class TextSource implements SchemalessSource {
     byte sep;
     Schema schema;
     List<File> files;
+    Charset charset;
 
     public TextSource(GeneralConf globals, TextSourceConf conf) {
         this.globals = globals;
@@ -74,6 +76,8 @@ public class TextSource implements SchemalessSource {
             logger.warn("Number of input files ({}) is less than number of threads ({})",
                 this.files.size(), globals.getThreads());
         }
+
+        charset = Charset.forName(conf.getEncoding());
     }
 
     @Override
