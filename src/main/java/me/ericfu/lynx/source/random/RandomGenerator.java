@@ -4,6 +4,13 @@ import java.util.Random;
 
 public interface RandomGenerator {
 
-    Object generate(int i, Random rand);
+    /**
+     * Generate one value
+     *
+     * @param rownum an increasing int number starting from 1
+     * @param rand   the Random object
+     * @return generated value
+     */
+    Object generate(int rownum, Random rand);
 
 }

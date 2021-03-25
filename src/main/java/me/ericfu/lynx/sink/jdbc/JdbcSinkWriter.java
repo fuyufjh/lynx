@@ -101,6 +101,7 @@ public class JdbcSinkWriter implements SinkWriter {
             } else {
                 ps.setNull(i, Types.BINARY);
             }
+            break;
         default:
             throw new AssertionError();
         }

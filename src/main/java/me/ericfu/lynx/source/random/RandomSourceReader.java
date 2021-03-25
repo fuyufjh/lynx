@@ -77,7 +77,7 @@ public class RandomSourceReader implements SourceReader {
     private Record buildRandomRecord() {
         RecordBuilder builder = new RecordBuilder(table.getType());
         for (int i = 0; i < table.getType().getFieldCount(); i++) {
-            builder.set(i, generators[i].generate(current, random));
+            builder.set(i, generators[i].generate(current + 1, random));
         }
         return builder.build();
     }
