@@ -46,9 +46,9 @@ public class Checkpointer implements Runnable {
 
     public synchronized void saveCheckpoint() throws CheckpointException {
         RootCheckpoint cp = new RootCheckpoint();
-        cp.setCheckpoints(taskboard.getSchemaPipelines().entrySet().stream().collect(Collectors.toMap(
+        cp.setCheckpoints(taskboard.getTableTasks().entrySet().stream().collect(Collectors.toMap(
             e -> e.getKey(),
-            e -> e.getValue().stream().map(Pipeline::getCheckpoint).collect(Collectors.toList())
+            e -> e.getValue().stream().map(Task::getCheckpoint).collect(Collectors.toList())
         )));
 
         try {
@@ -77,16 +77,16 @@ public class Checkpointer implements Runnable {
         }
 
         for (String schema : root.getCheckpoints().keySet()) {
-            List<Pipeline.Checkpoint> checkpoints = root.getCheckpoints().get(schema);
-            List<Pipeline> pipelines = taskboard.getSchemaPipelines().get(schema);
-            if (pipelines.isEmpty()) {
+            List<Task.Checkpoint> checkpoints = root.getCheckpoints().get(schema);
+            List<Task> tasks = taskboard.getTableTasks().get(schema);
+            if (tasks.isEmpty()) {
                 throw new CheckpointException("unknown schema '" + schema + "' in checkpoint");
             }
-            if (pipelines.size() != checkpoints.size()) {
-                throw new CheckpointException("number of pipelines mismatch");
+            if (tasks.size() != checkpoints.size()) {
+                throw new CheckpointException("number of tasks mismatch");
             }
             for (int i = 0; i < checkpoints.size(); i++) {
-                pipelines.get(i).setCheckpoint(checkpoints.get(i));
+                tasks.get(i).setCheckpoint(checkpoints.get(i));
             }
         }
     }

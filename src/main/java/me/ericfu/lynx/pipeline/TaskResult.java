@@ -1,13 +1,13 @@
 package me.ericfu.lynx.pipeline;
 
 /**
- * Result summary of a pipeline
+ * Result summary of a task
  */
-public class PipelineResult {
+public class TaskResult {
 
     private final long records;
 
-    public PipelineResult(long records) {
+    public TaskResult(long records) {
         this.records = records;
     }
 

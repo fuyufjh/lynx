@@ -8,42 +8,42 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * TaskBoard saves all pipelines in this Lynx instance
+ * TaskBoard saves all tasks in this Lynx instance
  */
 public final class TaskBoard {
 
-    private final Map<String, List<Pipeline>> schemaPipelines;
+    private final Map<String, List<Task>> tableTasks;
 
-    private TaskBoard(Map<String, List<Pipeline>> schemaPipelines) {
-        this.schemaPipelines = schemaPipelines;
+    private TaskBoard(Map<String, List<Task>> tableTasks) {
+        this.tableTasks = tableTasks;
     }
 
-    public Map<String, List<Pipeline>> getSchemaPipelines() {
-        return schemaPipelines;
+    public Map<String, List<Task>> getTableTasks() {
+        return tableTasks;
     }
 
-    public Iterable<Pipeline> getPipelines() {
-        return Iterables.concat(schemaPipelines.values());
+    public Iterable<Task> getTasks() {
+        return Iterables.concat(tableTasks.values());
     }
 
     public static class Builder {
 
-        private final Map<String, List<Pipeline>> schemaPipelines = new HashMap<>();
+        private final Map<String, List<Task>> tableTasks = new HashMap<>();
         private String currentTable;
 
         public void setCurrentTable(String table) {
-            assert !schemaPipelines.containsKey(table);
+            assert !tableTasks.containsKey(table);
             this.currentTable = table;
-            schemaPipelines.put(table, new ArrayList<>());
+            tableTasks.put(table, new ArrayList<>());
         }
 
-        public void addPipeline(Pipeline pipeline) {
-            assert schemaPipelines.containsKey(currentTable);
-            schemaPipelines.get(currentTable).add(pipeline);
+        public void addTask(Task task) {
+            assert tableTasks.containsKey(currentTable);
+            tableTasks.get(currentTable).add(task);
         }
 
         public TaskBoard build() {
-            return new TaskBoard(schemaPipelines);
+            return new TaskBoard(tableTasks);
         }
     }
 }

@@ -1,7 +1,7 @@
 package me.ericfu.lynx.model.checkpoint;
 
 import lombok.Data;
-import me.ericfu.lynx.pipeline.Pipeline;
+import me.ericfu.lynx.pipeline.Task;
 
 import java.util.Date;
 import java.util.List;
@@ -15,6 +15,6 @@ public class RootCheckpoint {
     /**
      * Checkpoints of partitions of each table
      */
-    private Map<String, List<Pipeline.Checkpoint>> checkpoints;
+    private Map<String, List<Task.Checkpoint>> checkpoints;
 
 }

@@ -15,12 +15,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Pipeline is composed by a pair of source and sink as well as the related utilities, such as data type convertor.
- * By design a pipeline is always executed by a single thread.
+ * Task is composed by a pair of source and sink as well as the related utilities, such as data type convertor.
+ * By design a task is always executed by a single thread.
  */
-public class Pipeline implements Callable<PipelineResult> {
+public class Task implements Callable<TaskResult> {
 
-    private static final Logger logger = LoggerFactory.getLogger(Pipeline.class);
+    private static final Logger logger = LoggerFactory.getLogger(Task.class);
 
     private final String name;
     private final int part;
@@ -32,8 +32,8 @@ public class Pipeline implements Callable<PipelineResult> {
 
     private volatile Checkpoint checkpoint = new Checkpoint();
 
-    public Pipeline(String name, int part, SourceReader source, SinkWriter sink, RecordConvertor convertor,
-                    AtomicReference<Throwable> fatalError) {
+    public Task(String name, int part, SourceReader source, SinkWriter sink, RecordConvertor convertor,
+                AtomicReference<Throwable> fatalError) {
         this.name = name;
         this.part = part;
         this.source = source;
@@ -43,7 +43,7 @@ public class Pipeline implements Callable<PipelineResult> {
     }
 
     @Override
-    public PipelineResult call() throws Exception {
+    public TaskResult call() throws Exception {
         try {
             if (checkpoint.source == null) {
                 source.open();
@@ -70,7 +70,7 @@ public class Pipeline implements Callable<PipelineResult> {
                 cp.setSink(sink.checkpoint());
                 this.checkpoint = cp;
             }
-            return new PipelineResult(count);
+            return new TaskResult(count);
 
         } catch (Exception | Error ex) {
             // notify other pipeline to stop
