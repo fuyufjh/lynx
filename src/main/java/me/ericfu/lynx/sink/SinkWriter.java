@@ -21,7 +21,7 @@ public interface SinkWriter {
     void close() throws DataSinkException;
 
     /**
-     * Create a latest checkpoint
+     * Create a latest checkpoint. Returns null if there is nothing to save
      */
     SinkCheckpoint checkpoint();
 }

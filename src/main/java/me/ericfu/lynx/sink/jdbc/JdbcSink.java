@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class JdbcSink implements Sink {
@@ -27,6 +28,8 @@ public class JdbcSink implements Sink {
      */
     Map<String, String> insertTemplates;
 
+    Properties connProps;
+
     public JdbcSink(GeneralConf globals, JdbcSinkConf conf) {
         this.globals = globals;
         this.conf = conf;
@@ -34,14 +37,24 @@ public class JdbcSink implements Sink {
 
     @Override
     public void init() throws DataSinkException {
+        // build connection properties
+        connProps = new Properties();
+        if (conf.getUser() != null) {
+            connProps.put("user", conf.getUser());
+        }
+        if (conf.getPassword() != null) {
+            connProps.put("password", conf.getPassword());
+        }
+        if (conf.getProperties() != null) {
+            connProps.putAll(conf.getProperties());
+        }
+
         // Fetch schema via JDBC metadata interface
         Map<String, RecordTypeBuilder> recordTypeBuilders = new HashMap<>();
-        try {
-            Connection connection = DriverManager.getConnection(conf.getUrl(), conf.getUser(), conf.getPassword());
-
+        try (Connection connection = DriverManager.getConnection(conf.getUrl(), connProps)) {
             // Extract schema from target table
             DatabaseMetaData meta = connection.getMetaData();
-            try (ResultSet rs = meta.getColumns(null, null, conf.getTable(), null)) {
+            try (ResultSet rs = meta.getColumns(null, null, "%", null)) {
                 while (rs.next()) {
                     String tableName = rs.getString("TABLE_NAME");
                     String columnName = rs.getString("COLUMN_NAME");
@@ -65,7 +78,7 @@ public class JdbcSink implements Sink {
 
         // build insert statement template
         insertTemplates = schema.getTables().stream()
-            .collect(Collectors.toMap(Table::getName, t -> buildInsertTemplate(t.getType())));
+            .collect(Collectors.toMap(Table::getName, this::buildInsertTemplate));
     }
 
     @Override
@@ -78,11 +91,11 @@ public class JdbcSink implements Sink {
         return new JdbcSinkWriter(this, table);
     }
 
-    private String buildInsertTemplate(RecordType type) {
-        String fieldList = type.getFields().stream().map(Field::getName)
+    private String buildInsertTemplate(Table table) {
+        String fieldList = table.getType().getFields().stream().map(Field::getName)
             .collect(Collectors.joining(",", "(", ")"));
-        String valueList = type.getFields().stream().map(x -> "?")
+        String valueList = table.getType().getFields().stream().map(x -> "?")
             .collect(Collectors.joining(",", "(", ")"));
-        return "INSERT IGNORE INTO " + conf.getTable() + fieldList + " VALUES " + valueList;
+        return "INSERT IGNORE INTO " + table.getName() + fieldList + " VALUES " + valueList;
     }
 }

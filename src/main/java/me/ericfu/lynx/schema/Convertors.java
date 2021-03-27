@@ -15,18 +15,25 @@ public abstract class Convertors {
     private static final Map<Pair<BasicType, BasicType>, Convertor> convertors = new HashMap<>();
 
     static {
-        register(LONG, STRING, v -> v == null ? null : Long.toString((Long) v));
-        register(FLOAT, STRING, v -> v == null ? null : Float.toString((Float) v));
-        register(DOUBLE, STRING, v -> v == null ? null : Double.toString((Double) v));
+        register(BOOLEAN, INT, v -> ((Boolean) v) ? 1 : 0);
+        register(BOOLEAN, LONG, v -> ((Boolean) v) ? 1L : 0L);
+        register(INT, LONG, v -> (long) ((Integer) v));
+        register(FLOAT, DOUBLE, v -> (double) ((Float) v));
 
-        register(STRING, LONG, v -> v == null ? null : Long.parseLong((String) v));
-        register(STRING, FLOAT, v -> v == null ? null : Float.parseFloat((String) v));
-        register(STRING, DOUBLE, v -> v == null ? null : Double.parseDouble((String) v));
+        register(LONG, STRING, v -> Long.toString((Long) v));
+        register(FLOAT, STRING, v -> Float.toString((Float) v));
+        register(DOUBLE, STRING, v -> Double.toString((Double) v));
 
-        register(STRING, STRING, IDENTICAL);
+        register(STRING, LONG, v -> Long.parseLong((String) v));
+        register(STRING, FLOAT, v -> Float.parseFloat((String) v));
+        register(STRING, DOUBLE, v -> Double.parseDouble((String) v));
+
+        register(BOOLEAN, BOOLEAN, IDENTICAL);
+        register(INT, INT, IDENTICAL);
         register(LONG, LONG, IDENTICAL);
         register(FLOAT, FLOAT, IDENTICAL);
         register(DOUBLE, DOUBLE, IDENTICAL);
+        register(STRING, STRING, IDENTICAL);
         register(BINARY, BINARY, IDENTICAL);
     }
 
@@ -43,7 +50,8 @@ public abstract class Convertors {
     }
 
     private static void register(BasicType from, BasicType to, Convertor convertor) {
-        Convertor old = convertors.put(new Pair<>(from, to), convertor);
+        Convertor nullSafeConvertor = v -> v == null ? null : convertor.convert(v);
+        Convertor old = convertors.put(new Pair<>(from, to), nullSafeConvertor);
         if (old != null) {
             throw new AssertionError("convertor (" + from + " -> " + to + ") is duplicated");
         }

@@ -4,6 +4,7 @@ import lombok.Data;
 import me.ericfu.lynx.model.conf.SinkConf;
 
 import javax.validation.constraints.NotEmpty;
+import java.util.Map;
 
 @Data
 public class JdbcSinkConf implements SinkConf {
@@ -15,7 +16,6 @@ public class JdbcSinkConf implements SinkConf {
 
     private String password;
 
-    @NotEmpty
-    private String table;
+    private Map<String, String> properties;
 
 }

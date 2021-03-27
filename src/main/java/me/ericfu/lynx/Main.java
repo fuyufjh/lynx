@@ -124,6 +124,7 @@ public class Main {
             SchemaUtils.checkCompatible(sourceSchema, sinkSchema);
         } catch (IncompatibleSchemaException e) {
             logger.error("Schema not compatible: {}", e.getMessage());
+            return;
         }
 
         /*----------------------------------------------------------

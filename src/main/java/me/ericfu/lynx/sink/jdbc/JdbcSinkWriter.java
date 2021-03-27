@@ -28,7 +28,7 @@ public class JdbcSinkWriter implements SinkWriter {
     public void open() throws DataSinkException {
         String insertTemplate = s.insertTemplates.get(table.getName());
         try {
-            connection = DriverManager.getConnection(s.conf.getUrl(), s.conf.getUser(), s.conf.getPassword());
+            connection = DriverManager.getConnection(s.conf.getUrl(), s.connProps);
             connection.setAutoCommit(false);
             ps = connection.prepareStatement(insertTemplate);
         } catch (SQLException ex) {
@@ -129,7 +129,6 @@ public class JdbcSinkWriter implements SinkWriter {
     @Override
     public SinkCheckpoint checkpoint() {
         // Returns an empty checkpoint because of nothing to save
-        return new SinkCheckpoint() {
-        };
+        return null;
     }
 }
