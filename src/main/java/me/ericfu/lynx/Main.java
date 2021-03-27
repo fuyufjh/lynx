@@ -6,8 +6,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.ericfu.lynx.exception.IncompatibleSchemaException;
 import me.ericfu.lynx.model.conf.RootConf;
 import me.ericfu.lynx.pipeline.Checkpointer;
+import me.ericfu.lynx.pipeline.Pipeline;
 import me.ericfu.lynx.pipeline.Task;
-import me.ericfu.lynx.pipeline.TaskBoard;
 import me.ericfu.lynx.pipeline.TaskResult;
 import me.ericfu.lynx.schema.RecordConvertor;
 import me.ericfu.lynx.schema.Schema;
@@ -134,13 +134,13 @@ public class Main {
         AtomicReference<Throwable> fatalError = new AtomicReference<>();
         List<Future<TaskResult>> futures = new ArrayList<>();
 
-        TaskBoard.Builder taskBoardBuilder = new TaskBoard.Builder();
+        Pipeline.Builder pipelineBuilder = new Pipeline.Builder();
 
         // Create tasks for each table in data source
         for (Table sourceTable : sourceSchema.getTables()) {
             final Table sinkTable = sinkSchema.getTable(sourceTable.getName());
             assert sinkTable != null; // already checked
-            taskBoardBuilder.setCurrentTable(sinkTable.getName());
+            pipelineBuilder.setCurrentTable(sinkTable.getName());
 
             // Num of tasks is determined by num of source partitions
             List<SourceReader> readers = source.createReaders(sourceTable);
@@ -150,18 +150,18 @@ public class Main {
             for (SourceReader reader : readers) {
                 SinkWriter writer = sink.createWriter(sinkTable);
                 Task task = new Task(sourceTable.getName(), count++, reader, writer, convertor, fatalError);
-                taskBoardBuilder.addTask(task);
+                pipelineBuilder.addTask(task);
             }
             logger.info("Table {}: {} tasks created", sourceTable.getName(), count);
         }
 
-        TaskBoard taskBoard = taskBoardBuilder.build();
+        Pipeline pipeline = pipelineBuilder.build();
         logger.info("All tasks created");
 
         Checkpointer checkpointer;
         if (conf.getGeneral().getCheckpointFile() != null) {
             File checkpointFile = new File(conf.getGeneral().getCheckpointFile());
-            checkpointer = new Checkpointer(taskBoard, checkpointFile, fatalError);
+            checkpointer = new Checkpointer(pipeline, checkpointFile, fatalError);
             try {
                 checkpointer.loadCheckpoint();
             } catch (Exception e) {
@@ -197,7 +197,7 @@ public class Main {
             logger.info("Checkpoint task scheduled");
         }
 
-        for (Task task : taskBoard.getTasks()) {
+        for (Task task : pipeline.getTasks()) {
             futures.add(threadPool.submit(task));
         }
 

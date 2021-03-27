@@ -8,13 +8,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * TaskBoard saves all tasks in this Lynx instance
+ * Pipeline is a collection of tasks, belonging to one or more tables. Currently a Lynx
+ * instance contains only one pipeline.
  */
-public final class TaskBoard {
+public final class Pipeline {
 
     private final Map<String, List<Task>> tableTasks;
 
-    private TaskBoard(Map<String, List<Task>> tableTasks) {
+    private Pipeline(Map<String, List<Task>> tableTasks) {
         this.tableTasks = tableTasks;
     }
 
@@ -42,8 +43,8 @@ public final class TaskBoard {
             tableTasks.get(currentTable).add(task);
         }
 
-        public TaskBoard build() {
-            return new TaskBoard(tableTasks);
+        public Pipeline build() {
+            return new Pipeline(tableTasks);
         }
     }
 }

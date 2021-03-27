@@ -19,12 +19,12 @@ public class Checkpointer implements Runnable {
 
     private static final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-    private final TaskBoard taskboard;
+    private final Pipeline pipeline;
     private final File file;
     private final AtomicReference<Throwable> fatalError;
 
-    public Checkpointer(TaskBoard taskboard, File file, AtomicReference<Throwable> fatalError) {
-        this.taskboard = taskboard;
+    public Checkpointer(Pipeline pipeline, File file, AtomicReference<Throwable> fatalError) {
+        this.pipeline = pipeline;
         this.file = file;
         this.fatalError = fatalError;
     }
@@ -46,7 +46,7 @@ public class Checkpointer implements Runnable {
 
     public synchronized void saveCheckpoint() throws CheckpointException {
         RootCheckpoint cp = new RootCheckpoint();
-        cp.setCheckpoints(taskboard.getTableTasks().entrySet().stream().collect(Collectors.toMap(
+        cp.setCheckpoints(pipeline.getTableTasks().entrySet().stream().collect(Collectors.toMap(
             e -> e.getKey(),
             e -> e.getValue().stream().map(Task::getCheckpoint).collect(Collectors.toList())
         )));
@@ -78,7 +78,7 @@ public class Checkpointer implements Runnable {
 
         for (String schema : root.getCheckpoints().keySet()) {
             List<Task.Checkpoint> checkpoints = root.getCheckpoints().get(schema);
-            List<Task> tasks = taskboard.getTableTasks().get(schema);
+            List<Task> tasks = pipeline.getTableTasks().get(schema);
             if (tasks.isEmpty()) {
                 throw new CheckpointException("unknown schema '" + schema + "' in checkpoint");
             }
