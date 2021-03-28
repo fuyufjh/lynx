@@ -38,16 +38,7 @@ public class JdbcSink implements Sink {
     @Override
     public void init() throws DataSinkException {
         // build connection properties
-        connProps = new Properties();
-        if (conf.getUser() != null) {
-            connProps.put("user", conf.getUser());
-        }
-        if (conf.getPassword() != null) {
-            connProps.put("password", conf.getPassword());
-        }
-        if (conf.getProperties() != null) {
-            connProps.putAll(conf.getProperties());
-        }
+        connProps = JdbcUtils.buildConnProps(conf.getUser(), conf.getPassword(), conf.getProperties());
 
         // Fetch schema via JDBC metadata interface
         Map<String, RecordTypeBuilder> recordTypeBuilders = new HashMap<>();

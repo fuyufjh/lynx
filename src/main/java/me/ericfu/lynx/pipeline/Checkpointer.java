@@ -1,5 +1,6 @@
 package me.ericfu.lynx.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import me.ericfu.lynx.exception.CheckpointException;
@@ -17,7 +18,9 @@ public class Checkpointer implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(Checkpointer.class);
 
-    private static final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper mapper = new ObjectMapper()
+        .enable(SerializationFeature.INDENT_OUTPUT)
+        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     private final Pipeline pipeline;
     private final File file;

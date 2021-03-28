@@ -3,10 +3,15 @@ package me.ericfu.lynx.sink.jdbc;
 import me.ericfu.lynx.schema.BasicType;
 
 import java.sql.Types;
+import java.util.Map;
+import java.util.Properties;
 
-abstract class JdbcUtils {
+/**
+ * Utilities for JDBC Source and Sink
+ */
+public abstract class JdbcUtils {
 
-    static BasicType convertJdbcType(int jdbcType) {
+    public static BasicType convertJdbcType(int jdbcType) {
         switch (jdbcType) {
         case Types.BOOLEAN:
             return BasicType.BOOLEAN;
@@ -38,4 +43,20 @@ abstract class JdbcUtils {
         }
     }
 
+    /**
+     * Build JDBC connection properties
+     */
+    public static Properties buildConnProps(String user, String password, Map<String, String> other) {
+        Properties connProps = new Properties();
+        if (user != null) {
+            connProps.put("user", user);
+        }
+        if (password != null) {
+            connProps.put("password", password);
+        }
+        if (other != null) {
+            connProps.putAll(other);
+        }
+        return connProps;
+    }
 }

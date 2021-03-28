@@ -2,6 +2,8 @@ package me.ericfu.lynx.source;
 
 import me.ericfu.lynx.model.conf.GeneralConf;
 import me.ericfu.lynx.model.conf.SourceConf;
+import me.ericfu.lynx.source.jdbc.JdbcSource;
+import me.ericfu.lynx.source.jdbc.JdbcSourceConf;
 import me.ericfu.lynx.source.random.RandomSource;
 import me.ericfu.lynx.source.random.RandomSourceConf;
 import me.ericfu.lynx.source.text.TextSource;
@@ -15,6 +17,9 @@ public class SourceFactory {
         }
         if (conf instanceof RandomSourceConf) {
             return new RandomSource(globals, (RandomSourceConf) conf);
+        }
+        if (conf instanceof JdbcSourceConf) {
+            return new JdbcSource(globals, (JdbcSourceConf) conf);
         }
         throw new IllegalStateException("unreachable");
     }

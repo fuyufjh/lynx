@@ -1,6 +1,5 @@
 package me.ericfu.lynx.pipeline;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.model.checkpoint.SinkCheckpoint;
@@ -111,7 +110,6 @@ public class Task implements Callable<TaskResult> {
         this.checkpoint = checkpoint;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Data
     public static class Checkpoint {
         private SourceCheckpoint source;
