@@ -6,7 +6,6 @@ import me.ericfu.lynx.sink.jdbc.JdbcSink;
 import me.ericfu.lynx.sink.jdbc.JdbcSinkConf;
 import me.ericfu.lynx.sink.text.TextSink;
 import me.ericfu.lynx.sink.text.TextSinkConf;
-import sun.plugin.dom.exception.InvalidStateException;
 
 public class SinkFactory {
 
@@ -16,7 +15,7 @@ public class SinkFactory {
         } else if (conf instanceof TextSinkConf) {
             return new TextSink(globals, (TextSinkConf) conf);
         }
-        throw new InvalidStateException("unreachable");
+        throw new IllegalStateException("unreachable");
     }
 
 }
