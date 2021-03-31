@@ -3,6 +3,7 @@ package me.ericfu.lynx.source.jdbc;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.ImmutableList;
 import lombok.Data;
+import me.ericfu.lynx.data.ByteArray;
 import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.data.RecordBatchBuilder;
@@ -121,7 +122,7 @@ public class JdbcSourceReader implements SourceReader {
                 values[i] = rs.getString(i + 1);
                 break;
             case BINARY:
-                values[i] = rs.getBytes(i + 1);
+                values[i] = new ByteArray(rs.getBytes(i + 1));
                 break;
             }
             if (rs.wasNull()) {
@@ -170,15 +171,20 @@ public class JdbcSourceReader implements SourceReader {
     private String buildSelectQuery(Checkpoint cp) {
         List<String> selectFields = split.table.getType().getFields().stream()
             .map(Field::getName)
+            .map(this::quote)
             .collect(Collectors.toList());
         if (!split.isSplittable()) {
-            return "SELECT " + String.join(", ", selectFields) + " FROM " + split.table.getName();
+            return "SELECT " + String.join(", ", selectFields)
+                + " FROM " + quote(split.table.getName());
         }
 
         // splitKey is used for checkpoint so it must be included in the select fields
         if (!selectFields.contains(split.splitKey)) {
             // append to the last one field
-            selectFields = new ImmutableList.Builder<String>().addAll(selectFields).add(split.splitKey).build();
+            selectFields = new ImmutableList.Builder<String>()
+                .addAll(selectFields)
+                .add(quote(split.splitKey))
+                .build();
         }
 
         // Build WHERE conditions for split range and checkpoint
@@ -190,7 +196,7 @@ public class JdbcSourceReader implements SourceReader {
         // Build SQL statement
         StringBuilder query = new StringBuilder();
         query.append("SELECT ").append(String.join(", ", selectFields))
-            .append(" FROM ").append(split.table.getName());
+            .append(" FROM ").append(quote(split.table.getName()));
         if (!conditions.isEmpty()) {
             query.append(" WHERE ").append(String.join(" AND ", conditions));
         }
@@ -201,19 +207,23 @@ public class JdbcSourceReader implements SourceReader {
         List<String> conditions = new ArrayList<>();
         if (split.splitRange.hasLowerBound()) {
             if (split.splitRange.lowerBoundType() == BoundType.CLOSED) {
-                conditions.add(split.splitKey + " >= " + split.splitRange.lowerEndpoint());
+                conditions.add(quote(split.splitKey) + " >= " + split.splitRange.lowerEndpoint());
             } else {
-                conditions.add(split.splitKey + " > " + split.splitRange.lowerEndpoint());
+                conditions.add(quote(split.splitKey) + " > " + split.splitRange.lowerEndpoint());
             }
         }
         if (split.splitRange.hasUpperBound()) {
             if (split.splitRange.upperBoundType() == BoundType.CLOSED) {
-                conditions.add(split.splitKey + " <= " + split.splitRange.upperEndpoint());
+                conditions.add(quote(split.splitKey) + " <= " + split.splitRange.upperEndpoint());
             } else {
-                conditions.add(split.splitKey + " < " + split.splitRange.upperEndpoint());
+                conditions.add(quote(split.splitKey) + " < " + split.splitRange.upperEndpoint());
             }
         }
         return conditions;
+    }
+
+    private String quote(String identifier) {
+        return s.quoteIdentifier(identifier);
     }
 
     private void skipRecords(ResultSet rs, long skip) throws SQLException {

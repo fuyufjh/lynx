@@ -47,7 +47,7 @@ public class JdbcSource implements Source {
                 final TableDesc desc = e.getValue() == null ? new TableDesc() : e.getValue();
 
                 // Fetch schema via JDBC metadata interface
-                Map<String, BasicType> columnTypes = fetchColumnTypes(connection.getMetaData(), tableName);
+                Map<String, BasicType> columnTypes = fetchColumnTypes(connection.getMetaData(), connection.getSchema(), tableName);
 
                 // Build table schema
                 Table table = buildTable(tableName, desc, columnTypes);
@@ -64,11 +64,11 @@ public class JdbcSource implements Source {
         schema = schemaBuilder.build();
     }
 
-    private Map<String, BasicType> fetchColumnTypes(DatabaseMetaData meta, String tableName)
+    private Map<String, BasicType> fetchColumnTypes(DatabaseMetaData meta, String schema, String table)
         throws SQLException, DataSourceException {
         // Collect column types
         Map<String, BasicType> columnTypes = new LinkedHashMap<>();
-        try (ResultSet rs = meta.getColumns(null, null, tableName, null)) {
+        try (ResultSet rs = meta.getColumns(null, null, table, null)) {
             while (rs.next()) {
                 String columnName = rs.getString("COLUMN_NAME");
                 int jdbcType = rs.getInt("DATA_TYPE");
@@ -77,7 +77,7 @@ public class JdbcSource implements Source {
         }
 
         if (columnTypes.isEmpty()) {
-            throw new DataSourceException("table '" + tableName + "' not found");
+            throw new DataSourceException("table '" + table + "' not found");
         }
         return columnTypes;
     }
@@ -158,7 +158,8 @@ public class JdbcSource implements Source {
         // Fetch min/max value of split key
         Long min = null, max = null;
         try (Statement statement = connection.createStatement()) {
-            String query = String.format("SELECT MIN(%s), MAX(%s) FROM %s", splitKey, splitKey, table.getName());
+            String query = String.format("SELECT MIN(%s), MAX(%s) FROM %s",
+                quoteIdentifier(splitKey), quoteIdentifier(splitKey), quoteIdentifier(table.getName()));
             try (ResultSet rs = statement.executeQuery(query)) {
                 while (rs.next()) {
                     min = rs.getLong(1);
@@ -227,6 +228,10 @@ public class JdbcSource implements Source {
         return tableSplits.get(table.getName()).stream()
             .map(split -> new JdbcSourceReader(this, split))
             .collect(Collectors.toList());
+    }
+
+    String quoteIdentifier(String identifier) {
+        return '"' + identifier.replace("\"", "\\\"") + '"';
     }
 
     static class TableSplit {

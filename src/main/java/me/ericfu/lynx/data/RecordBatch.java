@@ -14,6 +14,10 @@ public class RecordBatch implements Iterable<Record> {
         return records.length;
     }
 
+    public Record getRecord(int i) {
+        return records[i];
+    }
+
     @Override
     public Iterator<Record> iterator() {
         return new Iterator<Record>() {

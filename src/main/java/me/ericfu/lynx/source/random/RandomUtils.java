@@ -5,7 +5,7 @@ import me.ericfu.lynx.data.ByteArray;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
-abstract class RandomUtils {
+public abstract class RandomUtils {
 
     /**
      * Generate a random string consist of printable characters in ASCII, ranging from 0x20 (space) to 0x7E (~)
