@@ -11,10 +11,16 @@ import java.util.List;
 
 public abstract class SourceTest extends PluginTest {
 
+    /**
+     * Read all records from source
+     */
     protected List<ReadRecord> readAllRecords(Source source, Table table) throws Exception {
         return readAllRecords(source, table, null);
     }
 
+    /**
+     * Read all records from source started with a checkpoint
+     */
     protected List<ReadRecord> readAllRecords(Source source, Table table, SourceCheckpoint cp) throws Exception {
         List<SourceReader> readers = source.createReaders(table);
 
@@ -39,6 +45,9 @@ public abstract class SourceTest extends PluginTest {
         return results;
     }
 
+    /**
+     * Record with additional info to check assertions
+     */
     protected static class ReadRecord {
         public final Record record;
         public final int reader;

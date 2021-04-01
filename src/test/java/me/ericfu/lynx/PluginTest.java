@@ -5,8 +5,12 @@ import me.ericfu.lynx.source.random.RandomUtils;
 
 import java.util.Random;
 
+/**
+ * Base class of test for both Source and Sink
+ */
 public abstract class PluginTest {
 
+    protected static final double NULL_RATIO = 0.1;
     protected static final int NUM_RECORDS = 10;
 
     protected static final RandomRecord[] RECORD;
@@ -26,8 +30,8 @@ public abstract class PluginTest {
                 nullOr(r.nextLong()),
                 nullOr(r.nextFloat()),
                 nullOr(r.nextDouble()),
-                nullOr(RandomUtils.randomAsciiString(r, 20)),
-                nullOr(RandomUtils.randomBinary(r, 20))
+                nullOr(RandomUtils.randomAsciiString(r, 100)),
+                nullOr(RandomUtils.randomBinary(r, 100))
             );
         }
     }
@@ -60,7 +64,7 @@ public abstract class PluginTest {
 
 
     private static <T> T nullOr(T value) {
-        if (r.nextDouble() < 0.1) {
+        if (r.nextDouble() < NULL_RATIO) {
             return null;
         } else {
             return value;

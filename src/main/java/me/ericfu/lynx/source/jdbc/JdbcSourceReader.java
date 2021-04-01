@@ -73,7 +73,6 @@ public class JdbcSourceReader implements SourceReader {
 
     @Override
     public RecordBatch readBatch() throws DataSourceException {
-        // TODO: duplicate code
         while (builder.size() < s.globals.getBatchSize()) {
             Record record;
             try {
@@ -161,7 +160,7 @@ public class JdbcSourceReader implements SourceReader {
         if (count == 0) {
             return cp;
         } else if (split.isSplittable()) {
-            cp.setLastSplitKey(lastSplitKey);
+            cp.setLastPrimaryKey(lastSplitKey);
         } else {
             cp.setNextRowNum(count);
         }
@@ -189,8 +188,8 @@ public class JdbcSourceReader implements SourceReader {
 
         // Build WHERE conditions for split range and checkpoint
         List<String> conditions = buildRangeConditions();
-        if (cp != null && cp.lastSplitKey != null) {
-            conditions.add(split.splitKey + " > " + cp.lastSplitKey);
+        if (cp != null && cp.lastPrimaryKey != null) {
+            conditions.add(split.splitKey + " > " + cp.lastPrimaryKey);
         }
 
         // Build SQL statement
@@ -237,9 +236,9 @@ public class JdbcSourceReader implements SourceReader {
     @Data
     public static class Checkpoint implements SourceCheckpoint {
         /**
-         * Saves last split key when the table is splittable
+         * Saves last primary key when the table is split by primary key
          */
-        private Long lastSplitKey;
+        private Long lastPrimaryKey;
 
         /**
          * Saves next row number (starting from 0) when table is not splittable

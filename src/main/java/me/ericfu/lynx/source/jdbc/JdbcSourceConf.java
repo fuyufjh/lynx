@@ -3,6 +3,7 @@ package me.ericfu.lynx.source.jdbc;
 import lombok.Data;
 import me.ericfu.lynx.model.conf.SourceConf;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -18,6 +19,9 @@ public class JdbcSourceConf implements SourceConf {
 
     private String password;
 
+    /**
+     * Addition JDBC connection properties
+     */
     private Map<String, String> properties;
 
     /**
@@ -35,15 +39,10 @@ public class JdbcSourceConf implements SourceConf {
     public static class TableDesc {
 
         /**
-         * Selected columns to export
+         * Selected columns to export. Leave it unset to export all columns
          */
+        @Nullable
         private List<String> columns;
-
-        /**
-         * Split key is used to split table into multiple splits. By default the integer primary key will be
-         * chosen if exists
-         */
-        private String splitKey;
 
     }
 

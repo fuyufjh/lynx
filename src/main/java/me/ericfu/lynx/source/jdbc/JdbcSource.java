@@ -54,7 +54,7 @@ public class JdbcSource implements Source {
                 schemaBuilder.addTable(table);
 
                 // Split table into multiple parts if possible
-                List<TableSplit> tableSplits = buildTableSplits(table, desc, columnTypes, connection);
+                List<TableSplit> tableSplits = buildTableSplits(table, columnTypes, connection);
                 this.tableSplits.put(table.getName(), tableSplits);
             }
         } catch (SQLException ex) {
@@ -102,45 +102,35 @@ public class JdbcSource implements Source {
     /**
      * Build table splits according to table schema and user conf
      */
-    private List<TableSplit> buildTableSplits(Table table, TableDesc desc,
-                                              Map<String, BasicType> columnTypes,
-                                              Connection connection)
-        throws SQLException, DataSourceException {
+    private List<TableSplit> buildTableSplits(Table table, Map<String, BasicType> columnTypes, Connection connection)
+        throws SQLException {
 
+        /*
+         * Automatically choose a split key, which must satisfies:
+         * 1) be and be the only column in primary key
+         * 2) column type is integer number (INT or LONG)
+         */
         String splitKey;
-        if (desc.getSplitKey() != null) {
-            if (columnTypes.containsKey(desc.getSplitKey())) {
-                splitKey = desc.getSplitKey();
-            } else {
-                throw new DataSourceException("split key '" + desc.getSplitKey() + "' not found in table '" + table.getName() + "'");
+        try (ResultSet rs = connection.getMetaData().getPrimaryKeys(null, null, table.getName())) {
+            List<String> primaryKeyColumns = new ArrayList<>();
+            while (rs.next()) {
+                primaryKeyColumns.add(rs.getString("COLUMN_NAME"));
             }
-        } else {
-            /*
-             * Automatically choose a split key, which must satisfies:
-             * 1) be and be the only column in primary key
-             * 2) column type is integer number (INT or LONG)
-             */
-            try (ResultSet rs = connection.getMetaData().getPrimaryKeys(null, null, table.getName())) {
-                List<String> primaryKeyColumns = new ArrayList<>();
-                while (rs.next()) {
-                    primaryKeyColumns.add(rs.getString("COLUMN_NAME"));
-                }
-                if (primaryKeyColumns.size() != 1) {
-                    splitKey = null;
-                    if (primaryKeyColumns.size() == 0) {
-                        logger.warn("Table '{}' will be read with single thread since it does not contain a primary key", table.getName());
-                    } else {
-                        logger.warn("Table '{}' will be read with single thread since it contains a composite primary key", table.getName());
-                    }
+            if (primaryKeyColumns.size() != 1) {
+                splitKey = null;
+                if (primaryKeyColumns.size() == 0) {
+                    logger.warn("Table '{}' will be read with single thread since it does not contain a primary key", table.getName());
                 } else {
-                    BasicType type = columnTypes.get(primaryKeyColumns.get(0));
-                    if (type == BasicType.INT || type == BasicType.LONG) {
-                        splitKey = primaryKeyColumns.get(0);
-                        logger.info("Choose column '{}' as default split key for table '{}'", splitKey, table.getName());
-                    } else {
-                        splitKey = null;
-                        logger.warn("Table '{}' will be read with single thread since it's primary key '{}' is not integer", table.getName(), primaryKeyColumns.get(0));
-                    }
+                    logger.warn("Table '{}' will be read with single thread since it contains a composite primary key", table.getName());
+                }
+            } else {
+                BasicType type = columnTypes.get(primaryKeyColumns.get(0));
+                if (type == BasicType.INT || type == BasicType.LONG) {
+                    splitKey = primaryKeyColumns.get(0);
+                    logger.info("Choose column '{}' as default split key for table '{}'", splitKey, table.getName());
+                } else {
+                    splitKey = null;
+                    logger.warn("Table '{}' will be read with single thread since it's primary key '{}' is not integer", table.getName(), primaryKeyColumns.get(0));
                 }
             }
         }
@@ -179,12 +169,8 @@ public class JdbcSource implements Source {
             return Collections.singletonList(new TableSplit(table));
         }
 
-        /*
-         * By default generate parts according to number of threads, unless the data size is not large enough for
-         * every thread to get a full batch
-         */
-        int parts = (int) Math.min((max - min) / globals.getBatchSize(), globals.getThreads());
-        List<Range<Long>> ranges = buildSplitRanges(min, max, parts);
+        // By default generate parts according to number of threads
+        List<Range<Long>> ranges = buildSplitRanges(min, max, globals.getThreads());
 
         logger.info("Table '{}' will be split into {} parts and read in parallel", table.getName(), ranges.size());
         return ranges.stream()

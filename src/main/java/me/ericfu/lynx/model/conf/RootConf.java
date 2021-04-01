@@ -29,7 +29,7 @@ public final class RootConf {
     /**
      * Do validations according to the constraints annotated
      *
-     * @see javax.validation.constraints for all kinds of constraints
+     * @see javax.validation.constraints all kinds of constraints
      */
     public final void validate() throws InvalidConfigException {
         final ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
