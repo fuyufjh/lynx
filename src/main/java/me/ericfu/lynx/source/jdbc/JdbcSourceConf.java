@@ -4,6 +4,7 @@ import lombok.Data;
 import me.ericfu.lynx.model.conf.SourceConf;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,12 @@ public class JdbcSourceConf implements SourceConf {
      */
     private Map<String, TableDesc> tables;
 
+    /**
+     * How to deal with identifier?
+     */
+    @NotNull
+    private IdentifierQuotation quoteIdentifier = IdentifierQuotation.NO_QUOTE;
+
     @Data
     public static class TableDesc {
 
@@ -40,4 +47,25 @@ public class JdbcSourceConf implements SourceConf {
 
     }
 
+    public enum IdentifierQuotation {
+        /**
+         * Do not quote identifier
+         */
+        NO_QUOTE,
+
+        /**
+         * Quote with quotation mark (")
+         */
+        DOUBLE,
+
+        /**
+         * Quote with single quotation mark (`)
+         */
+        SINGLE,
+
+        /**
+         * Quote with back-quote mark (`)
+         */
+        BACKQUOTE,
+    }
 }

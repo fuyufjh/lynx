@@ -95,6 +95,7 @@ public class JdbcSourceTest extends SourceTest {
 
         JdbcSourceConf conf = new JdbcSourceConf();
         conf.setUrl(JDBC_URL);
+        conf.setQuoteIdentifier(JdbcSourceConf.IdentifierQuotation.DOUBLE); // ANSI Standard
         JdbcSourceConf.TableDesc t1 = new JdbcSourceConf.TableDesc();
         JdbcSourceConf.TableDesc t2 = new JdbcSourceConf.TableDesc();
         conf.setTables(ImmutableMap.of("t1", t1, "t2", t2));

@@ -230,8 +230,28 @@ public class JdbcSource implements Source {
             .collect(Collectors.toList());
     }
 
+    /*
+     * Quote identifier, for example, with quotation mark (") or backquote (`), etc.
+     */
     String quoteIdentifier(String identifier) {
-        return '"' + identifier.replace("\"", "\\\"") + '"';
+        char mark;
+        switch (conf.getQuoteIdentifier()) {
+        case NO_QUOTE:
+            return identifier;
+        case DOUBLE:
+            mark = '"';
+            break;
+        case SINGLE:
+            mark = '\'';
+            break;
+        case BACKQUOTE:
+            mark = '`';
+            break;
+        default:
+            throw new AssertionError();
+        }
+        // Escape quotation mark in identifier name with backlash
+        return mark + identifier.replace(String.valueOf(mark), "\\" + mark) + mark;
     }
 
     static class TableSplit {
