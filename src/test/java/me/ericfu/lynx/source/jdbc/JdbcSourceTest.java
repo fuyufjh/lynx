@@ -113,7 +113,7 @@ public class JdbcSourceTest extends SourceTest {
             .collect(Collectors.toList()));
 
         { // Check t1
-            List<ReadRecord> results = readAllRecords(source, schema.getTable("t1"));
+            List<ReadResult> results = readAllRecords(source, schema.getTable("t1"));
             assertEquals(Arrays.asList(0, 0, 0, 0, 0, 1, 1, 1, 1, 1),
                 results.stream().map(r -> r.reader).collect(Collectors.toList()));
             assertEquals(Arrays.asList(0, 0, 0, 1, 1),
@@ -128,7 +128,7 @@ public class JdbcSourceTest extends SourceTest {
         }
 
         { // Check t2
-            List<ReadRecord> results = readAllRecords(source, schema.getTable("t2"));
+            List<ReadResult> results = readAllRecords(source, schema.getTable("t2"));
             assertEquals(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
                 results.stream().map(r -> r.reader).collect(Collectors.toList()));
             assertEquals(Arrays.asList(0, 0, 0, 1, 1, 1, 2, 2, 2, 3),
@@ -140,6 +140,48 @@ public class JdbcSourceTest extends SourceTest {
                     .collect(Collectors.toList()),
                 results.stream().map(r -> r.record).collect(Collectors.toList())
             );
+        }
+    }
+
+    @Test
+    public void testCheckpoint() throws Exception {
+        GeneralConf globals = new GeneralConf();
+        globals.setBatchSize(3);
+        globals.setThreads(2);
+
+        JdbcSourceConf conf = new JdbcSourceConf();
+        conf.setUrl(JDBC_URL);
+        conf.setQuoteIdentifier(JdbcSourceConf.IdentifierQuotation.DOUBLE); // ANSI Standard
+        JdbcSourceConf.TableDesc t1 = new JdbcSourceConf.TableDesc();
+        JdbcSourceConf.TableDesc t2 = new JdbcSourceConf.TableDesc();
+        conf.setTables(ImmutableMap.of("t1", t1, "t2", t2));
+
+        JdbcSource source = (JdbcSource) new SourceFactory().create(globals, conf);
+        source.init();
+        Schema schema = source.getSchema();
+
+        { // Check t1
+            JdbcSourceReader.Checkpoint cp0 = new JdbcSourceReader.Checkpoint();
+            cp0.setLastPrimaryKey(0L); // 0 <here> 1 2 3 4
+            JdbcSourceReader.Checkpoint cp1 = new JdbcSourceReader.Checkpoint();
+            cp1.setLastPrimaryKey(9L); // 5 6 7 8 9 <here>
+
+            List<ReadResult> results = readAllRecords(source, schema.getTable("t1"), Arrays.asList(cp0, cp1));
+            assertEquals(Arrays.asList(0, 0, 0, 0),
+                results.stream().map(r -> r.reader).collect(Collectors.toList()));
+            assertEquals(Arrays.asList(0, 0, 0, 1),
+                results.stream().filter(r -> r.reader == 0).map(r -> r.batch).collect(Collectors.toList()));
+        }
+
+        { // Check t2
+            JdbcSourceReader.Checkpoint cp = new JdbcSourceReader.Checkpoint();
+            cp.setNextRowNum(6L); // expect to skip 6 rows (4 rows left)
+
+            List<ReadResult> results = readAllRecords(source, schema.getTable("t2"), Arrays.asList(cp));
+            assertEquals(Arrays.asList(0, 0, 0, 0),
+                results.stream().map(r -> r.reader).collect(Collectors.toList()));
+            assertEquals(Arrays.asList(0, 0, 0, 1),
+                results.stream().filter(r -> r.reader == 0).map(r -> r.batch).collect(Collectors.toList()));
         }
     }
 }

@@ -14,29 +14,30 @@ public abstract class SourceTest extends PluginTest {
     /**
      * Read all records from source
      */
-    protected List<ReadRecord> readAllRecords(Source source, Table table) throws Exception {
+    protected List<ReadResult> readAllRecords(Source source, Table table) throws Exception {
         return readAllRecords(source, table, null);
     }
 
     /**
      * Read all records from source started with a checkpoint
      */
-    protected List<ReadRecord> readAllRecords(Source source, Table table, SourceCheckpoint cp) throws Exception {
+    protected List<ReadResult> readAllRecords(Source source, Table table,
+                                              List<SourceCheckpoint> checkpoints) throws Exception {
         List<SourceReader> readers = source.createReaders(table);
 
-        List<ReadRecord> results = new ArrayList<>();
+        List<ReadResult> results = new ArrayList<>();
         for (int readerNo = 0; readerNo < readers.size(); readerNo++) {
             final SourceReader reader = readers.get(readerNo);
-            if (cp == null) {
+            if (checkpoints == null) {
                 reader.open();
             } else {
-                reader.open(cp);
+                reader.open(checkpoints.get(readerNo));
             }
 
             RecordBatch batch;
             for (int batchNo = 0; (batch = reader.readBatch()) != null; batchNo++) {
                 for (int recordNo = 0; recordNo < batch.size(); recordNo++) {
-                    results.add(new ReadRecord(batch.getRecord(recordNo), readerNo, batchNo, recordNo));
+                    results.add(new ReadResult(batch.getRecord(recordNo), readerNo, batchNo, recordNo));
                 }
             }
 
@@ -46,15 +47,15 @@ public abstract class SourceTest extends PluginTest {
     }
 
     /**
-     * Record with additional info to check assertions
+     * Record with additional info to check reader's behaviour
      */
-    protected static class ReadRecord {
+    protected static class ReadResult {
         public final Record record;
         public final int reader;
         public final int batch;
         public final int index;
 
-        public ReadRecord(Record record, int reader, int batch, int index) {
+        public ReadResult(Record record, int reader, int batch, int index) {
             this.record = record;
             this.reader = reader;
             this.batch = batch;

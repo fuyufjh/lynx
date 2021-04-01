@@ -189,7 +189,7 @@ public class JdbcSourceReader implements SourceReader {
         // Build WHERE conditions for split range and checkpoint
         List<String> conditions = buildRangeConditions();
         if (cp != null && cp.lastPrimaryKey != null) {
-            conditions.add(split.splitKey + " > " + cp.lastPrimaryKey);
+            conditions.add(quote(split.splitKey) + " > " + cp.lastPrimaryKey);
         }
 
         // Build SQL statement
