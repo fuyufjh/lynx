@@ -3,8 +3,8 @@ package me.ericfu.lynx.schema;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -15,7 +15,7 @@ public final class Schema {
     /**
      * name to schema
      */
-    private final Map<String, Table> tables; // TODO: preserve order of tables
+    private final Map<String, Table> tables;
 
     Schema(Map<String, Table> ts) {
         this.tables = ImmutableMap.copyOf(ts);
@@ -41,7 +41,7 @@ public final class Schema {
         private final Map<String, Table> tables;
 
         public Builder() {
-            this.tables = new TreeMap<>();
+            this.tables = new LinkedHashMap<>();
         }
 
         public void addTable(Table table) {

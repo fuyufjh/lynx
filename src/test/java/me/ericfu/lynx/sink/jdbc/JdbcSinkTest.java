@@ -55,7 +55,7 @@ public class JdbcSinkTest extends SinkTest {
     public void tearDown() throws Exception {
         try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_PROPS)) {
             try (Statement stmt = conn.createStatement()) {
-                stmt.executeUpdate("DROP TABLE t1 IF EXISTS");
+                stmt.executeUpdate("DROP TABLE `t1` IF EXISTS");
             }
         }
     }
