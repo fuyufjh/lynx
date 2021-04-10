@@ -35,7 +35,8 @@ class TextSourceReader implements SourceReader {
         this.file = file;
     }
 
-    public void open() throws DataSourceException {
+    @Override
+    public void open(SourceCheckpoint checkpoint) throws DataSourceException {
         if (s.conf.getSeparator().length() == 1 && s.conf.getSeparator().charAt(0) < 0x80) {
             s.sep = (byte) s.conf.getSeparator().charAt(0);
         } else {
@@ -54,17 +55,16 @@ class TextSourceReader implements SourceReader {
 
         valueReader = new TextValueReader(in, s.charset, s.sep);
         builder = new RecordBatchBuilder(s.globals.getBatchSize());
-    }
 
-    @Override
-    public void open(SourceCheckpoint checkpoint) throws DataSourceException {
-        open();
-
-        Checkpoint cp = (Checkpoint) checkpoint;
-        try {
-            in.skip(cp.fileOffset);
-        } catch (IOException e) {
-            throw new DataSourceException("cannot seek to checkpoint offset " + cp.fileOffset);
+        if (checkpoint != null) {
+            Checkpoint cp = (Checkpoint) checkpoint;
+            try {
+                if (in.skip(cp.fileOffset) != cp.fileOffset) {
+                    throw new IOException("actually skipped less than given offset");
+                }
+            } catch (IOException e) {
+                throw new DataSourceException("cannot seek to checkpoint offset " + cp.fileOffset);
+            }
         }
     }
 

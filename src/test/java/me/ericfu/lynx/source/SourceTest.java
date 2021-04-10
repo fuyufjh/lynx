@@ -28,11 +28,7 @@ public abstract class SourceTest extends PluginTest {
         List<ReadResult> results = new ArrayList<>();
         for (int readerNo = 0; readerNo < readers.size(); readerNo++) {
             final SourceReader reader = readers.get(readerNo);
-            if (checkpoints == null) {
-                reader.open();
-            } else {
-                reader.open(checkpoints.get(readerNo));
-            }
+            reader.open(checkpoints != null ? checkpoints.get(readerNo) : null);
 
             RecordBatch batch;
             for (int batchNo = 0; (batch = reader.readBatch()) != null; batchNo++) {

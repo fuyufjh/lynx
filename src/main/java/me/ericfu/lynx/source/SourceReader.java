@@ -4,14 +4,14 @@ import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.checkpoint.SourceCheckpoint;
 
+import javax.annotation.Nullable;
+
 public interface SourceReader {
 
-    void open() throws DataSourceException;
-
     /**
-     * Continue from checkpoint
+     * Open. Optionally continue from checkpoint
      */
-    void open(SourceCheckpoint checkpoint) throws DataSourceException;
+    void open(@Nullable SourceCheckpoint checkpoint) throws DataSourceException;
 
     /**
      * Read next batch of rows from data source

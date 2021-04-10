@@ -42,11 +42,6 @@ class JdbcSourceReader implements SourceReader {
     }
 
     @Override
-    public void open() throws DataSourceException {
-        open(null);
-    }
-
-    @Override
     public void open(SourceCheckpoint checkpoint) throws DataSourceException {
         final Checkpoint cp = (Checkpoint) checkpoint;
         String query = buildSelectQuery(cp);

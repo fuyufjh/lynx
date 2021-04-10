@@ -45,17 +45,9 @@ public class Task implements Callable<TaskResult> {
     @Override
     public TaskResult call() throws Exception {
         try {
-            if (checkpoint.source == null) {
-                source.open();
-            } else {
-                source.open(checkpoint.source);
-            }
-
-            if (checkpoint.sink == null) {
-                sink.open();
-            } else {
-                sink.open(checkpoint.sink);
-            }
+            // Note that both/either checkpoints may be null
+            source.open(checkpoint.source);
+            sink.open(checkpoint.sink);
 
             long count = 0;
             RecordBatch batch;

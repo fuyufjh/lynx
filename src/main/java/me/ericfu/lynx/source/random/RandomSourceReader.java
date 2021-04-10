@@ -33,7 +33,7 @@ class RandomSourceReader implements SourceReader {
     }
 
     @Override
-    public void open() throws DataSourceException {
+    public void open(SourceCheckpoint checkpoint) throws DataSourceException {
         this.builder = new RecordBatchBuilder(s.globals.getBatchSize());
         this.random = new Random();
 
@@ -60,14 +60,11 @@ class RandomSourceReader implements SourceReader {
                 generators[i] = new RandomGeneratorCompiler().compile(code, field.getType().getClazz());
             }
         }
-    }
 
-    @Override
-    public void open(SourceCheckpoint checkpoint) throws DataSourceException {
-        open();
-
-        Checkpoint cp = (Checkpoint) checkpoint;
-        this.current = cp.nextRowNum;
+        if (checkpoint != null) {
+            Checkpoint cp = (Checkpoint) checkpoint;
+            this.current = cp.nextRowNum;
+        }
     }
 
     @Override
