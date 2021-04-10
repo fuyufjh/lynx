@@ -15,27 +15,37 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 import static org.junit.Assert.*;
 
 public class JdbcSinkTest extends SinkTest {
 
     private static final String JDBC_URL = "jdbc:hsqldb:mem:jdbc_sink_test";
+    private static final Properties JDBC_PROPS = new Properties();
+    private static final Map<String, String> JDBC_PROPS_MAP = new HashMap<>();
+
+    static {
+        JDBC_PROPS_MAP.put("sql.syntax_mys", "true");
+        JDBC_PROPS.putAll(JDBC_PROPS_MAP);
+    }
 
     @Before
     public void setUp() throws Exception {
-        try (Connection conn = DriverManager.getConnection(JDBC_URL)) {
+        try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_PROPS)) {
             try (Statement stmt = conn.createStatement()) {
-                stmt.executeUpdate("CREATE TABLE \"t1\" (\n" +
-                    "    \"id\" INTEGER IDENTITY,\n" +
-                    "    \"boolean_col\" BOOLEAN,\n" +
-                    "    \"int_col\" INTEGER,\n" +
-                    "    \"long_col\" BIGINT,\n" +
-                    "    \"float_col\" FLOAT,\n" +
-                    "    \"double_col\" FLOAT,\n" +
-                    "    \"string_col\" VARCHAR(100),\n" +
-                    "    \"binary_col\" VARBINARY(100),\n" +
-                    "    PRIMARY KEY (\"id\")\n" +
+                stmt.executeUpdate("CREATE TABLE `t1` (\n" +
+                    "    `id` INTEGER IDENTITY,\n" +
+                    "    `boolean_col` BOOLEAN,\n" +
+                    "    `int_col` INTEGER,\n" +
+                    "    `long_col` BIGINT,\n" +
+                    "    `float_col` FLOAT,\n" +
+                    "    `double_col` FLOAT,\n" +
+                    "    `string_col` VARCHAR(100),\n" +
+                    "    `binary_col` VARBINARY(100),\n" +
+                    "    PRIMARY KEY (`id`)\n" +
                     ")");
             }
         }
@@ -43,9 +53,9 @@ public class JdbcSinkTest extends SinkTest {
 
     @After
     public void tearDown() throws Exception {
-        try (Connection conn = DriverManager.getConnection(JDBC_URL)) {
+        try (Connection conn = DriverManager.getConnection(JDBC_URL, JDBC_PROPS)) {
             try (Statement stmt = conn.createStatement()) {
-                stmt.executeUpdate("DROP TABLE \"t1\" IF EXISTS");
+                stmt.executeUpdate("DROP TABLE t1 IF EXISTS");
             }
         }
     }
@@ -54,7 +64,9 @@ public class JdbcSinkTest extends SinkTest {
     public void testSimple() throws Exception {
         JdbcSinkConf conf = new JdbcSinkConf();
         conf.setUrl(JDBC_URL);
+        conf.setProperties(JDBC_PROPS_MAP);
         conf.setQuoteIdentifier(JdbcSourceConf.IdentifierQuotation.DOUBLE);
+        conf.setInsertTemplate("insert ignore into $table ($fields) values ($values)");
 
         JdbcSink sink = (JdbcSink) new SinkFactory().create(globals, conf);
         sink.init(sourceSchema);
@@ -70,7 +82,7 @@ public class JdbcSinkTest extends SinkTest {
         try (Connection conn = DriverManager.getConnection(JDBC_URL)) {
             try (Statement stmt = conn.createStatement()) {
                 ResultSet rs = stmt.executeQuery(
-                    "SELECT \"boolean_col\", \"long_col\", \"double_col\", \"string_col\", \"binary_col\" FROM \"t1\"");
+                    "SELECT `boolean_col`, `long_col`, `double_col`, `string_col`, `binary_col` FROM `t1`");
                 for (int i = 0; i < NUM_RECORDS; i++) {
                     assertTrue(rs.next());
                     assertEquals(RECORD[i].booleanVal, JdbcUtils.getValue(rs, BasicType.BOOLEAN, 1));

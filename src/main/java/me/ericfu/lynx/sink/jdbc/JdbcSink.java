@@ -62,7 +62,7 @@ public class JdbcSink implements Sink {
                 schemaBuilder.addTable(table);
             }
         } catch (SQLException ex) {
-            throw new DataSinkException("cannot fetch metadata", ex);
+            throw new DataSinkException("cannot fetch metadata: " + ex.getMessage(), ex);
         }
 
         schema = schemaBuilder.build();
@@ -81,10 +81,13 @@ public class JdbcSink implements Sink {
 
     private String buildInsertTemplate(String table, List<Field> fields) {
         String fieldList = fields.stream().map(Field::getName).map(this::quoteIdentifier)
-            .collect(Collectors.joining(",", "(", ")"));
+            .collect(Collectors.joining(","));
         String valueList = fields.stream().map(x -> "?")
-            .collect(Collectors.joining(",", "(", ")"));
-        return "INSERT INTO " + quoteIdentifier(table) + fieldList + " VALUES " + valueList;
+            .collect(Collectors.joining(","));
+        return conf.getInsertTemplate().toUpperCase()
+            .replace("$TABLE", quoteIdentifier(table))
+            .replace("$FIELDS", fieldList)
+            .replace("$VALUES", valueList);
     }
 
     private JdbcSinkTable buildTable(String tableName, Iterable<String> columns, Map<String, BasicType> columnTypes)

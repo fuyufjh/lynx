@@ -29,4 +29,13 @@ public class JdbcSinkConf implements SinkConf {
     @NotNull
     private IdentifierQuotation quoteIdentifier = IdentifierQuotation.NO_QUOTE;
 
+    /**
+     * SQL Template for insert statement. <code>$TABLE</code>, <code>$FIELDS</code> and <code>$VALUES</code>
+     * will be treated as placeholder and will be replaced with actual table name, field list and value list
+     * (separated with comma)
+     * <p>
+     * Note that idempotence (aka. INSERT IGNORE or REPLACE) is better to have
+     */
+    @NotNull
+    private String insertTemplate = "INSERT INTO $TABLE ($FIELDS) VALUES ($VALUES)";
 }
