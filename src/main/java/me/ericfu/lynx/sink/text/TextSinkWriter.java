@@ -39,17 +39,10 @@ public class TextSinkWriter implements SinkWriter {
     }
 
     @Override
-    public void open() throws DataSinkException {
-        doOpen(0);
-    }
-
-    @Override
     public void open(SinkCheckpoint checkpoint) throws DataSinkException {
-        Checkpoint cp = (Checkpoint) checkpoint;
-        doOpen(cp.fileOffset);
-    }
+        final Checkpoint cp = (Checkpoint) checkpoint;
+        long offset = cp == null ? 0 : cp.fileOffset;
 
-    private void doOpen(long offset) throws DataSinkException {
         // Create upper-level directory
         synchronized (s) {
             if (!file.getParentFile().exists()) {

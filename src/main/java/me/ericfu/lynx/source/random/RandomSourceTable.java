@@ -5,12 +5,23 @@ import me.ericfu.lynx.schema.type.StructType;
 
 class RandomSourceTable extends Table {
 
-    public RandomSourceTable(String name, StructType type) {
+    /**
+     * Random generator for each column
+     */
+    private final RandomGenerator[] generators;
+
+    public RandomSourceTable(String name, StructType type, RandomGenerator[] generators) {
         super(name, type);
+        assert generators.length == type.getFieldCount();
+        this.generators = generators;
     }
 
     @Override
     public StructType getType() {
         return (StructType) super.getType();
+    }
+
+    public RandomGenerator getGenerator(int i) {
+        return generators[i];
     }
 }

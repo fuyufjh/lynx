@@ -26,7 +26,7 @@ public class JdbcSinkWriter implements SinkWriter {
     }
 
     @Override
-    public void open() throws DataSinkException {
+    public void open(SinkCheckpoint checkpoint) throws DataSinkException {
         String insertTemplate = table.getInsertTemplate();
         try {
             connection = DriverManager.getConnection(s.conf.getUrl(), s.connProps);
@@ -35,11 +35,6 @@ public class JdbcSinkWriter implements SinkWriter {
         } catch (SQLException ex) {
             throw new DataSinkException(ex);
         }
-    }
-
-    @Override
-    public void open(SinkCheckpoint checkpoint) throws DataSinkException {
-        open();
     }
 
     @Override

@@ -6,8 +6,6 @@ import me.ericfu.lynx.model.checkpoint.SinkCheckpoint;
 
 public interface SinkWriter {
 
-    void open() throws DataSinkException;
-
     /**
      * Continue from checkpoint
      */
