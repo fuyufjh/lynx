@@ -2,7 +2,6 @@ package me.ericfu.lynx.source.random;
 
 import com.google.common.collect.ImmutableMap;
 import me.ericfu.lynx.data.ByteArray;
-import me.ericfu.lynx.model.conf.GeneralConf;
 import me.ericfu.lynx.schema.Field;
 import me.ericfu.lynx.schema.Schema;
 import me.ericfu.lynx.schema.type.BasicType;
@@ -21,10 +20,6 @@ import static org.junit.Assert.*;
 public class RandomSourceTest extends SourceTest {
 
     private RandomSource buildSourceForTest() {
-
-        GeneralConf globals = new GeneralConf();
-        globals.setBatchSize(3);
-        globals.setThreads(2);
 
         ColumnSpec t1c1 = new ColumnSpec();
         t1c1.setName("c1");

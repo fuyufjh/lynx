@@ -74,17 +74,17 @@ public class JdbcSink implements Sink {
     }
 
     @Override
-    public SinkWriter createWriter(Table table) {
+    public SinkWriter createWriter(Table table, int no) {
         assert table instanceof JdbcSinkTable;
         return new JdbcSinkWriter(this, (JdbcSinkTable) table);
     }
 
     private String buildInsertTemplate(String table, List<Field> fields) {
-        String fieldList = fields.stream().map(Field::getName)
+        String fieldList = fields.stream().map(Field::getName).map(this::quoteIdentifier)
             .collect(Collectors.joining(",", "(", ")"));
         String valueList = fields.stream().map(x -> "?")
             .collect(Collectors.joining(",", "(", ")"));
-        return "INSERT IGNORE INTO " + table + fieldList + " VALUES " + valueList;
+        return "INSERT INTO " + quoteIdentifier(table) + fieldList + " VALUES " + valueList;
     }
 
     private JdbcSinkTable buildTable(String tableName, Iterable<String> columns, Map<String, BasicType> columnTypes)
@@ -100,5 +100,29 @@ public class JdbcSink implements Sink {
         StructType type = typeBuilder.build();
         String insertTemplate = buildInsertTemplate(tableName, type.getFields());
         return new JdbcSinkTable(tableName, type, insertTemplate);
+    }
+
+    /*
+     * Quote identifier, for example, with quotation mark (") or backquote (`), etc.
+     */
+    String quoteIdentifier(String identifier) {
+        char mark;
+        switch (conf.getQuoteIdentifier()) {
+        case NO_QUOTE:
+            return identifier;
+        case DOUBLE:
+            mark = '"';
+            break;
+        case SINGLE:
+            mark = '\'';
+            break;
+        case BACKQUOTE:
+            mark = '`';
+            break;
+        default:
+            throw new AssertionError();
+        }
+        // Escape quotation mark in identifier name with backlash
+        return mark + identifier.replace(String.valueOf(mark), "\\" + mark) + mark;
     }
 }

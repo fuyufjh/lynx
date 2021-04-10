@@ -134,8 +134,8 @@ public class Main {
 
             int count = 0;
             for (SourceReader reader : readers) {
-                SinkWriter writer = sink.createWriter(sinkTable);
-                Task task = new Task(sourceTable.getName(), count++, reader, writer, convertor, fatalError);
+                SinkWriter writer = sink.createWriter(sinkTable, count++);
+                Task task = new Task(sourceTable.getName(), count, reader, writer, convertor, fatalError);
                 pipelineBuilder.addTask(task);
             }
             logger.info("Table {}: {} tasks created", sourceTable.getName(), count);

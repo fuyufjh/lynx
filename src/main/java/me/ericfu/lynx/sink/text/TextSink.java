@@ -74,10 +74,9 @@ public class TextSink implements Sink {
     }
 
     @Override
-    public SinkWriter createWriter(Table table) {
+    public SinkWriter createWriter(Table table, int no) {
         assert table instanceof TextSinkTable;
-        int partition = writerCount.compute(table.getName(), (name, count) -> count == null ? 0 : count + 1);
-        String fileName = String.format("%s/%d.txt", table.getName(), partition);
+        String fileName = String.format("%s/%d.txt", table.getName(), no);
         Path targetPath = Paths.get(conf.getPath(), fileName);
         return new TextSinkWriter(this, targetPath.toFile(), (TextSinkTable) table, charset);
     }

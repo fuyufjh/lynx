@@ -1,12 +1,13 @@
 package me.ericfu.lynx.data;
 
+import javax.validation.constraints.NotNull;
 import java.util.Iterator;
 
 public class RecordBatch implements Iterable<Record> {
 
     private final Record[] records;
 
-    RecordBatch(Record[] records) {
+    public RecordBatch(@NotNull Record... records) {
         this.records = records;
     }
 

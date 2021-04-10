@@ -3,7 +3,6 @@ package me.ericfu.lynx.source.jdbc;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.ImmutableList;
 import lombok.Data;
-import me.ericfu.lynx.data.ByteArray;
 import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.data.RecordBatchBuilder;
@@ -11,6 +10,7 @@ import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.checkpoint.SourceCheckpoint;
 import me.ericfu.lynx.schema.Field;
 import me.ericfu.lynx.schema.type.StructType;
+import me.ericfu.lynx.sink.jdbc.JdbcUtils;
 import me.ericfu.lynx.source.SourceReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,32 +96,7 @@ class JdbcSourceReader implements SourceReader {
         final StructType type = split.table.getType();
         Object[] values = new Object[type.getFieldCount()];
         for (int i = 0; i < type.getFields().size(); i++) {
-            switch (type.getField(i).getType()) {
-            case BOOLEAN:
-                values[i] = rs.getBoolean(i + 1);
-                break;
-            case INT:
-                values[i] = rs.getInt(i + 1);
-                break;
-            case LONG:
-                values[i] = rs.getLong(i + 1);
-                break;
-            case FLOAT:
-                values[i] = rs.getFloat(i + 1);
-                break;
-            case DOUBLE:
-                values[i] = rs.getDouble(i + 1);
-                break;
-            case STRING:
-                values[i] = rs.getString(i + 1);
-                break;
-            case BINARY:
-                values[i] = new ByteArray(rs.getBytes(i + 1));
-                break;
-            }
-            if (rs.wasNull()) {
-                values[i] = null;
-            }
+            values[i] = JdbcUtils.getValue(rs, type.getField(i).getType(), i + 1);
         }
 
         if (split.isSplittable()) {

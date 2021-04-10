@@ -89,10 +89,6 @@ public class JdbcSourceTest extends SourceTest {
 
     @Test
     public void testSimple() throws Exception {
-        GeneralConf globals = new GeneralConf();
-        globals.setBatchSize(3);
-        globals.setThreads(2);
-
         JdbcSourceConf conf = new JdbcSourceConf();
         conf.setUrl(JDBC_URL);
         conf.setQuoteIdentifier(JdbcSourceConf.IdentifierQuotation.DOUBLE); // ANSI Standard

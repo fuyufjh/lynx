@@ -1,6 +1,7 @@
 package me.ericfu.lynx;
 
 import me.ericfu.lynx.data.ByteArray;
+import me.ericfu.lynx.model.conf.GeneralConf;
 import me.ericfu.lynx.source.random.RandomUtils;
 
 import java.util.Random;
@@ -36,6 +37,17 @@ public abstract class PluginTest {
         }
     }
 
+    protected static final int BATCH_SIZE = 3;
+    protected static final int THREADS = 2; // preferred partitions
+
+    protected final GeneralConf globals;
+
+    {
+        globals = new GeneralConf();
+        globals.setBatchSize(BATCH_SIZE);
+        globals.setThreads(THREADS);
+    }
+
     protected static class RandomRecord {
         public final Boolean booleanVal;
         public final Integer intVal;
@@ -61,7 +73,6 @@ public abstract class PluginTest {
             this.binaryVal = binaryVal;
         }
     }
-
 
     private static <T> T nullOr(T value) {
         if (r.nextDouble() < NULL_RATIO) {

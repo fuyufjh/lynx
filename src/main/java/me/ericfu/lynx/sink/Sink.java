@@ -17,5 +17,11 @@ public interface Sink {
      */
     Schema getSchema();
 
-    SinkWriter createWriter(Table table);
+    /**
+     * Create writer with a unique number
+     *
+     * @param table sink table
+     * @param no    an incremental and unique integer representing the written partition
+     */
+    SinkWriter createWriter(Table table, int no);
 }

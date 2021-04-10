@@ -106,6 +106,45 @@ public abstract class JdbcUtils {
     }
 
     /**
+     * Read a value from ResultSet
+     *
+     * @param i index of parameter (starting from 1)
+     */
+    public static @Nullable
+    Object getValue(ResultSet rs, BasicType type, int i) throws SQLException {
+        Object value;
+        switch (type) {
+        case BOOLEAN:
+            value = rs.getBoolean(i);
+            break;
+        case INT:
+            value = rs.getInt(i);
+            break;
+        case LONG:
+            value = rs.getLong(i);
+            break;
+        case FLOAT:
+            value = rs.getFloat(i);
+            break;
+        case DOUBLE:
+            value = rs.getDouble(i);
+            break;
+        case STRING:
+            value = rs.getString(i);
+            break;
+        case BINARY:
+            value = new ByteArray(rs.getBytes(i));
+            break;
+        default:
+            throw new AssertionError();
+        }
+        if (rs.wasNull()) {
+            value = null;
+        }
+        return value;
+    }
+
+    /**
      * Build JDBC connection properties
      */
     public static Properties buildConnProps(String user, String password, Map<String, String> other) {
