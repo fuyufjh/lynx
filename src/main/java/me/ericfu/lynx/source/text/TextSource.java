@@ -6,6 +6,7 @@ import me.ericfu.lynx.model.conf.GeneralConf;
 import me.ericfu.lynx.schema.Schema;
 import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.schema.type.BasicType;
+import me.ericfu.lynx.schema.type.StructType;
 import me.ericfu.lynx.schema.type.TupleType;
 import me.ericfu.lynx.source.Source;
 import me.ericfu.lynx.source.SourceReader;
@@ -113,16 +114,31 @@ public class TextSource implements Source {
         return builder.build();
     }
 
+    /**
+     * Build record type according to the first line in file
+     *
+     * @return StructType if a header line is presented, otherwise TupleType
+     */
     private TupleType buildTypeFromFile(File file) throws IOException {
         try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
             TextValueReader reader = new TextValueReader(in, charset, sep);
-            TupleType.Builder type = new TupleType.Builder();
-            do {
-                reader.readString();
-                type.addField(BasicType.STRING);
-            } while (reader.isEndWithSeparator());
-            assert reader.isEndWithNewLine();
-            return type.build();
+            if (!conf.isWithHeader()) {
+                TupleType.Builder type = new TupleType.Builder();
+                do {
+                    reader.readString();
+                    type.addField(BasicType.STRING);
+                } while (reader.isEndWithSeparator());
+                assert reader.isEndWithNewLine();
+                return type.build();
+            } else {
+                StructType.Builder type = new StructType.Builder();
+                do {
+                    String fieldName = reader.readString();
+                    type.addField(fieldName, BasicType.STRING);
+                } while (reader.isEndWithSeparator());
+                assert reader.isEndWithNewLine();
+                return type.build();
+            }
         }
     }
 

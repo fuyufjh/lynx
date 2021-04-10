@@ -1,5 +1,6 @@
 package me.ericfu.lynx.sink.text;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Data;
 import me.ericfu.lynx.model.conf.SinkConf;
 
@@ -13,6 +14,12 @@ public class TextSinkConf implements SinkConf {
      */
     @NotEmpty
     private String path;
+
+    /**
+     * Whether contains a header line
+     */
+    @JsonAlias("header")
+    private boolean withHeader = false;
 
     /**
      * column separator

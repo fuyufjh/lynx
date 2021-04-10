@@ -7,6 +7,7 @@ import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.exception.DataSinkException;
 import me.ericfu.lynx.model.checkpoint.SinkCheckpoint;
+import me.ericfu.lynx.schema.Field;
 import me.ericfu.lynx.schema.type.BasicType;
 import me.ericfu.lynx.sink.SinkWriter;
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class TextSinkWriter implements SinkWriter {
 
@@ -78,6 +80,23 @@ public class TextSinkWriter implements SinkWriter {
 
         this.out = new CountingOutputStream(new BufferedOutputStream(fos));
         this.startOffset = offset;
+
+        if (cp == null && s.conf.isWithHeader()) {
+            // Write header line
+            try {
+                final List<Field> fields = table.getType().getFields();
+                for (int i = 0; i < fields.size(); i++) {
+                    out.write(fields.get(i).getName().getBytes(charset));
+                    if (i < fields.size() - 1) {
+                        out.write(sep);
+                    } else {
+                        out.write('\n');
+                    }
+                }
+            } catch (IOException e) {
+                throw new DataSinkException(e);
+            }
+        }
     }
 
     @Override

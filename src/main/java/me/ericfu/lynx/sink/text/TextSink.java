@@ -16,9 +16,7 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class TextSink implements Sink {
 
@@ -29,11 +27,6 @@ public class TextSink implements Sink {
 
     Schema schema;
     Charset charset;
-
-    /**
-     * Count of writers for each table
-     */
-    Map<String, Integer> writerCount = new HashMap<>();
 
     public TextSink(GeneralConf globals, TextSinkConf conf) {
         this.globals = globals;

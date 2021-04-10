@@ -56,6 +56,15 @@ class TextSourceReader implements SourceReader {
         valueReader = new TextValueReader(in, s.charset, s.sep);
         builder = new RecordBatchBuilder(s.globals.getBatchSize());
 
+        if (s.conf.isWithHeader()) {
+            // skip header line
+            try {
+                readNextRow();
+            } catch (IOException e) {
+                throw new DataSourceException("cannot read file", e);
+            }
+        }
+
         if (checkpoint != null) {
             Checkpoint cp = (Checkpoint) checkpoint;
             try {

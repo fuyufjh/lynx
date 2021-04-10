@@ -1,5 +1,6 @@
 package me.ericfu.lynx.source.text;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Data;
 import me.ericfu.lynx.model.conf.SourceConf;
 
@@ -13,6 +14,12 @@ public class TextSourceConf implements SourceConf {
      */
     @NotEmpty
     private String path;
+
+    /**
+     * Whether contains a header line
+     */
+    @JsonAlias("header")
+    private boolean withHeader = false;
 
     /**
      * column separator
