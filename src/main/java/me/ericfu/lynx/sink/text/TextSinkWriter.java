@@ -7,7 +7,6 @@ import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.exception.DataSinkException;
 import me.ericfu.lynx.model.checkpoint.SinkCheckpoint;
-import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.schema.type.BasicType;
 import me.ericfu.lynx.sink.SinkWriter;
 import org.slf4j.Logger;
@@ -23,7 +22,7 @@ public class TextSinkWriter implements SinkWriter {
 
     private final TextSink s;
     private final File file;
-    private final Table table;
+    private final TextSinkTable table;
     private final byte[] sep;
     private final Charset charset;
 
@@ -31,7 +30,7 @@ public class TextSinkWriter implements SinkWriter {
     private long startOffset;
     private long lastBatchOffset;
 
-    public TextSinkWriter(TextSink s, File file, Table table, Charset charset) {
+    public TextSinkWriter(TextSink s, File file, TextSinkTable table, Charset charset) {
         this.s = s;
         this.file = file;
         this.table = table;

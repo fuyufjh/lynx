@@ -4,9 +4,8 @@ import me.ericfu.lynx.data.ByteArray;
 import me.ericfu.lynx.schema.type.BasicType;
 
 import javax.annotation.Nullable;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -121,5 +120,27 @@ public abstract class JdbcUtils {
             connProps.putAll(other);
         }
         return connProps;
+    }
+
+    /**
+     * Fetch column types from DatabaseMetaData interface
+     */
+    public static Map<String, BasicType> fetchColumnTypes(DatabaseMetaData meta,
+                                                          String catalog, String schema, String table)
+        throws SQLException {
+        // Collect column types
+        Map<String, BasicType> columnTypes = new LinkedHashMap<>();
+        try (ResultSet rs = meta.getColumns(catalog, schema, table, null)) {
+            while (rs.next()) {
+                String columnName = rs.getString("COLUMN_NAME");
+                int jdbcType = rs.getInt("DATA_TYPE");
+                columnTypes.put(columnName, convertJdbcType(jdbcType));
+            }
+        }
+
+        if (columnTypes.isEmpty()) {
+            throw new SQLException("table '" + table + "' not found");
+        }
+        return columnTypes;
     }
 }

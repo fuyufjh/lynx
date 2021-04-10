@@ -1,13 +1,13 @@
 package me.ericfu.lynx.schema;
 
-import me.ericfu.lynx.schema.type.StructType;
+import me.ericfu.lynx.schema.type.RecordType;
 
-public final class Table {
+public class Table {
 
     private final String name;
-    private final StructType type;
+    private final RecordType type;
 
-    public Table(String name, StructType type) {
+    public Table(String name, RecordType type) {
         this.name = name;
         this.type = type;
     }
@@ -16,7 +16,7 @@ public final class Table {
         return name;
     }
 
-    public StructType getType() {
+    public RecordType getType() {
         return type;
     }
 }

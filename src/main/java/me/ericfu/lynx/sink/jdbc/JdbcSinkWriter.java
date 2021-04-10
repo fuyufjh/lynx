@@ -5,7 +5,6 @@ import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.exception.DataSinkException;
 import me.ericfu.lynx.model.checkpoint.SinkCheckpoint;
 import me.ericfu.lynx.schema.Field;
-import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.sink.SinkWriter;
 
 import java.sql.Connection;
@@ -16,19 +15,19 @@ import java.sql.SQLException;
 public class JdbcSinkWriter implements SinkWriter {
 
     private final JdbcSink s;
-    private final Table table;
+    private final JdbcSinkTable table;
 
     private Connection connection;
     private PreparedStatement ps;
 
-    public JdbcSinkWriter(JdbcSink s, Table table) {
+    public JdbcSinkWriter(JdbcSink s, JdbcSinkTable table) {
         this.s = s;
         this.table = table;
     }
 
     @Override
     public void open() throws DataSinkException {
-        String insertTemplate = s.insertTemplates.get(table.getName());
+        String insertTemplate = table.getInsertTemplate();
         try {
             connection = DriverManager.getConnection(s.conf.getUrl(), s.connProps);
             connection.setAutoCommit(false);

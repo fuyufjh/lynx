@@ -96,24 +96,25 @@ public class JdbcSourceTest extends SourceTest {
         JdbcSourceConf conf = new JdbcSourceConf();
         conf.setUrl(JDBC_URL);
         conf.setQuoteIdentifier(JdbcSourceConf.IdentifierQuotation.DOUBLE); // ANSI Standard
-        JdbcSourceConf.TableDesc t1 = new JdbcSourceConf.TableDesc();
-        JdbcSourceConf.TableDesc t2 = new JdbcSourceConf.TableDesc();
-        conf.setTables(ImmutableMap.of("t1", t1, "t2", t2));
+        JdbcSourceConf.TableDesc t1d = new JdbcSourceConf.TableDesc();
+        JdbcSourceConf.TableDesc t2d = new JdbcSourceConf.TableDesc();
+        conf.setTables(ImmutableMap.of("t1", t1d, "t2", t2d));
 
         JdbcSource source = (JdbcSource) new SourceFactory().create(globals, conf);
         source.init();
 
         Schema schema = source.getSchema();
         assertEquals(2, schema.getTables().size());
-        assertEquals(6, schema.getTable("t1").getType().getFieldCount());
+        JdbcSourceTable t1 = (JdbcSourceTable) schema.getTable("t1");
+        assertEquals(6, t1.getType().getFieldCount());
         assertEquals(Arrays.asList(
             INT, BOOLEAN, LONG, DOUBLE, STRING, BINARY
-        ), schema.getTable("t1").getType().getFields()
+        ), t1.getType().getFields()
             .stream().map(Field::getType)
             .collect(Collectors.toList()));
 
         { // Check t1
-            List<ReadResult> results = readAllRecords(source, schema.getTable("t1"));
+            List<ReadResult> results = readAllRecords(source, t1);
             assertEquals(Arrays.asList(0, 0, 0, 0, 0, 1, 1, 1, 1, 1),
                 results.stream().map(r -> r.reader).collect(Collectors.toList()));
             assertEquals(Arrays.asList(0, 0, 0, 1, 1),

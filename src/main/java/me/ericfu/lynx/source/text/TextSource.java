@@ -1,23 +1,21 @@
 package me.ericfu.lynx.source.text;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.conf.GeneralConf;
-import me.ericfu.lynx.schema.Field;
 import me.ericfu.lynx.schema.Schema;
-import me.ericfu.lynx.schema.SchemaBuilder;
 import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.schema.type.BasicType;
-import me.ericfu.lynx.schema.type.StructType;
+import me.ericfu.lynx.schema.type.TupleType;
 import me.ericfu.lynx.source.Source;
 import me.ericfu.lynx.source.SourceReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.io.*;
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class TextSource implements Source {
@@ -29,31 +27,11 @@ public class TextSource implements Source {
 
     byte sep;
     Schema schema;
-    List<File> files;
     Charset charset;
 
     public TextSource(GeneralConf globals, TextSourceConf conf) {
         this.globals = globals;
         this.conf = conf;
-    }
-
-    public void provideSchema(Schema schema) {
-        SchemaBuilder sb = new SchemaBuilder();
-        for (Table t : schema.getTables()) {
-            StructType.Builder builder = new StructType.Builder();
-            for (Field field : t.getType().getFields()) {
-                // Always provide strings regardless of the requested type
-                builder.addField(field.getName(), BasicType.STRING);
-            }
-            StructType type = builder.build();
-            sb.addTable(new Table(t.getName(), type));
-        }
-        this.schema = sb.build();
-    }
-
-    @Override
-    public Schema getSchema() {
-        return schema;
     }
 
     @Override
@@ -64,31 +42,90 @@ public class TextSource implements Source {
             throw new DataSourceException("file or folder '" + conf.getPath() + "' not exist");
         }
 
-        if (file.isDirectory()) {
-            // Scan all files under this dir (exclude dot files)
-            File[] files = file.listFiles((dir, name) -> !name.startsWith("."));
-            assert files != null;
-            if (!Arrays.stream(files).allMatch(File::isFile)) {
-                throw new DataSourceException("invalid directory structure");
-            }
-            this.files = ImmutableList.copyOf(files);
-        } else {
-            // Single text file
-            this.files = ImmutableList.of(file);
-        }
-
-        if (this.files.size() < globals.getThreads()) {
-            logger.warn("Number of input files ({}) is less than number of threads ({})",
-                this.files.size(), globals.getThreads());
+        try {
+            Map<String, Collection<File>> tableFiles = findAllFiles(file);
+            schema = buildSchemaFromFiles(tableFiles);
+        } catch (IOException e) {
+            throw new DataSourceException(e);
         }
 
         charset = Charset.forName(conf.getEncoding());
     }
 
     @Override
+    public Schema getSchema() {
+        return schema;
+    }
+
+    @Override
     public List<SourceReader> createReaders(Table table) {
-        return files.stream()
-            .map(f -> new TextSourceReader(this, table.getType(), f))
+        assert table instanceof TextSourceTable;
+        return ((TextSourceTable) table).getFiles().stream()
+            .map(f -> new TextSourceReader(this, ((TextSourceTable) table).getType(), f))
             .collect(Collectors.toList());
     }
+
+    /**
+     * Find all files under specified folder
+     *
+     * @param root the file or root folder
+     * @return table (named according to the directory or file name) and the files associated with it
+     */
+    @VisibleForTesting
+    Map<String, Collection<File>> findAllFiles(File root) throws DataSourceException, IOException {
+        if (root.isDirectory()) {
+            // Scan all files under this dir (exclude dot files)
+            File[] files = root.listFiles((dir, name) -> !name.startsWith("."));
+            if (files == null) {
+                throw new IOException("cannot list files under " + root.getPath());
+            }
+            if (Arrays.stream(files).allMatch(File::isFile)) {
+                return ImmutableMap.of(root.getName(), Arrays.asList(files));
+            } else if (Arrays.stream(files).allMatch(File::isDirectory)) {
+                // Find in sub-directory recursively
+                ImmutableMap.Builder<String, Collection<File>> builder = ImmutableMap.builder();
+                for (File dir : files) {
+                    Map<String, Collection<File>> fileInDir = findAllFiles(dir);
+                    for (Map.Entry<String, Collection<File>> e : fileInDir.entrySet()) {
+                        // Inner files are named with 'path/to/the/file'
+                        builder.put(root.getName() + '/' + e.getKey(), e.getValue());
+                    }
+                }
+                return builder.build();
+            } else {
+                throw new DataSourceException("Invalid directory structure");
+            }
+        } else {
+            // Single text file
+            final String fileName = root.getName();
+            String table = fileName.substring(0, fileName.indexOf('.'));
+            return ImmutableMap.of(table, Collections.singleton(root));
+        }
+    }
+
+    private Schema buildSchemaFromFiles(Map<String, Collection<File>> tableFiles) throws IOException {
+        Schema.Builder builder = new Schema.Builder();
+        for (Map.Entry<String, Collection<File>> e : tableFiles.entrySet()) {
+            final String table = e.getKey();
+            final Collection<File> files = e.getValue();
+            assert !files.isEmpty();
+            File file = files.stream().findFirst().get();
+            builder.addTable(new TextSourceTable(table, buildTypeFromFile(file), files));
+        }
+        return builder.build();
+    }
+
+    private TupleType buildTypeFromFile(File file) throws IOException {
+        try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
+            TextValueReader reader = new TextValueReader(in, charset, sep);
+            TupleType.Builder type = new TupleType.Builder();
+            do {
+                reader.readString();
+                type.addField(BasicType.STRING);
+            } while (reader.isEndWithSeparator());
+            assert reader.isEndWithNewLine();
+            return type.build();
+        }
+    }
+
 }

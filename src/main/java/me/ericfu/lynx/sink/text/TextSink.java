@@ -1,9 +1,12 @@
 package me.ericfu.lynx.sink.text;
 
 import me.ericfu.lynx.exception.DataSinkException;
+import me.ericfu.lynx.exception.IncompatibleSchemaException;
 import me.ericfu.lynx.model.conf.GeneralConf;
+import me.ericfu.lynx.schema.Field;
 import me.ericfu.lynx.schema.Schema;
 import me.ericfu.lynx.schema.Table;
+import me.ericfu.lynx.schema.type.TupleType;
 import me.ericfu.lynx.sink.Sink;
 import me.ericfu.lynx.sink.SinkWriter;
 import org.slf4j.Logger;
@@ -14,6 +17,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class TextSink implements Sink {
@@ -37,7 +41,7 @@ public class TextSink implements Sink {
     }
 
     @Override
-    public void init() throws DataSinkException {
+    public void init(Schema sourceSchema) throws DataSinkException, IncompatibleSchemaException {
         File dir = new File(conf.getPath());
         if (!dir.exists()) {
             logger.info("Path '" + conf.getPath() + "' not exist and will be created");
@@ -50,19 +54,31 @@ public class TextSink implements Sink {
         }
 
         charset = Charset.forName(conf.getEncoding());
+
+        // Build schema
+        Schema.Builder schema = new Schema.Builder();
+        for (Table sourceTable : sourceSchema.getTables()) {
+            if (!(sourceTable.getType() instanceof TupleType)) {
+                throw new IncompatibleSchemaException("text sink requires structured source");
+            }
+            List<Field> fields = ((TupleType) sourceTable.getType()).getFields();
+            TupleType type = new TupleType(fields);
+            schema.addTable(new TextSinkTable(sourceTable.getName(), type));
+        }
+        this.schema = schema.build();
     }
 
     @Override
-    public Schema getSchema(Schema schema) {
-        this.schema = schema;
+    public Schema getSchema() {
         return schema;
     }
 
     @Override
     public SinkWriter createWriter(Table table) {
+        assert table instanceof TextSinkTable;
         int partition = writerCount.compute(table.getName(), (name, count) -> count == null ? 0 : count + 1);
         String fileName = String.format("%s/%d.txt", table.getName(), partition);
         Path targetPath = Paths.get(conf.getPath(), fileName);
-        return new TextSinkWriter(this, targetPath.toFile(), table, charset);
+        return new TextSinkWriter(this, targetPath.toFile(), (TextSinkTable) table, charset);
     }
 }

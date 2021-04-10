@@ -5,7 +5,6 @@ import com.google.common.collect.Range;
 import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.conf.GeneralConf;
 import me.ericfu.lynx.schema.Schema;
-import me.ericfu.lynx.schema.SchemaBuilder;
 import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.schema.type.BasicType;
 import me.ericfu.lynx.schema.type.StructType;
@@ -44,17 +43,21 @@ public class JdbcSource implements Source {
 
         tableSplits = new LinkedHashMap<>();
 
-        SchemaBuilder schemaBuilder = new SchemaBuilder();
+        Schema.Builder schemaBuilder = new Schema.Builder();
         try (Connection connection = DriverManager.getConnection(conf.getUrl(), connProps)) {
             for (Map.Entry<String, TableDesc> e : conf.getTables().entrySet()) {
                 final String tableName = e.getKey();
                 final TableDesc desc = e.getValue() == null ? new TableDesc() : e.getValue();
 
                 // Fetch schema via JDBC metadata interface
-                Map<String, BasicType> columnTypes = fetchColumnTypes(connection.getMetaData(), connection.getSchema(), tableName);
+                Map<String, BasicType> columnTypes = JdbcUtils.fetchColumnTypes(connection.getMetaData(),
+                    connection.getCatalog(), connection.getSchema(), tableName);
+
+                // Export all the columns if columns not specified in conf
+                Iterable<String> columns = desc.getColumns() != null ? desc.getColumns() : columnTypes.keySet();
 
                 // Build table schema
-                Table table = buildTable(tableName, desc, columnTypes);
+                JdbcSourceTable table = buildTable(tableName, columns, columnTypes);
                 schemaBuilder.addTable(table);
 
                 // Split table into multiple parts if possible
@@ -68,29 +71,8 @@ public class JdbcSource implements Source {
         schema = schemaBuilder.build();
     }
 
-    private Map<String, BasicType> fetchColumnTypes(DatabaseMetaData meta, String schema, String table)
-        throws SQLException, DataSourceException {
-        // Collect column types
-        Map<String, BasicType> columnTypes = new LinkedHashMap<>();
-        try (ResultSet rs = meta.getColumns(null, null, table, null)) {
-            while (rs.next()) {
-                String columnName = rs.getString("COLUMN_NAME");
-                int jdbcType = rs.getInt("DATA_TYPE");
-                columnTypes.put(columnName, JdbcUtils.convertJdbcType(jdbcType));
-            }
-        }
-
-        if (columnTypes.isEmpty()) {
-            throw new DataSourceException("table '" + table + "' not found");
-        }
-        return columnTypes;
-    }
-
-    private Table buildTable(String tableName, TableDesc desc, Map<String, BasicType> columnTypes)
+    private JdbcSourceTable buildTable(String tableName, Iterable<String> columns, Map<String, BasicType> columnTypes)
         throws DataSourceException {
-        // Export all the columns if columns not specified in conf
-        Iterable<String> columns = desc.getColumns() != null ? desc.getColumns() : columnTypes.keySet();
-
         StructType.Builder rb = new StructType.Builder();
         for (String column : columns) {
             final BasicType type = columnTypes.get(column);
@@ -99,14 +81,13 @@ public class JdbcSource implements Source {
             }
             rb.addField(column, type);
         }
-
-        return new Table(tableName, rb.build());
+        return new JdbcSourceTable(tableName, rb.build());
     }
 
     /**
      * Build table splits according to table schema and user conf
      */
-    private List<TableSplit> buildTableSplits(Table table, Map<String, BasicType> columnTypes, Connection connection)
+    private List<TableSplit> buildTableSplits(JdbcSourceTable table, Map<String, BasicType> columnTypes, Connection connection)
         throws SQLException {
 
         /*
@@ -115,7 +96,7 @@ public class JdbcSource implements Source {
          * 2) column type is integer number (INT or LONG)
          */
         String splitKey;
-        try (ResultSet rs = connection.getMetaData().getPrimaryKeys(null, null, table.getName())) {
+        try (ResultSet rs = connection.getMetaData().getPrimaryKeys(connection.getCatalog(), connection.getSchema(), table.getName())) {
             List<String> primaryKeyColumns = new ArrayList<>();
             while (rs.next()) {
                 primaryKeyColumns.add(rs.getString("COLUMN_NAME"));
@@ -146,7 +127,7 @@ public class JdbcSource implements Source {
         }
     }
 
-    private List<TableSplit> buildTableSplits(Connection connection, Table table, String splitKey)
+    private List<TableSplit> buildTableSplits(Connection connection, JdbcSourceTable table, String splitKey)
         throws SQLException {
 
         // Fetch min/max value of split key
@@ -246,21 +227,21 @@ public class JdbcSource implements Source {
 
     static class TableSplit {
 
-        final Table table;
+        final JdbcSourceTable table;
         final String splitKey;
         final Range<Long> splitRange;
 
         /**
          * Constructor for non-splittable table
          */
-        TableSplit(Table table) {
+        TableSplit(JdbcSourceTable table) {
             this(table, null, null);
         }
 
         /**
          * Constructor for a singe split of a splittable table
          */
-        TableSplit(Table table, String splitKey, Range<Long> splitRange) {
+        TableSplit(JdbcSourceTable table, String splitKey, Range<Long> splitRange) {
             this.table = table;
             this.splitKey = splitKey;
             this.splitRange = splitRange;

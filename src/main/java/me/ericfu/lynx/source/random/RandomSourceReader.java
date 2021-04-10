@@ -8,17 +8,16 @@ import me.ericfu.lynx.data.RecordBuilder;
 import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.checkpoint.SourceCheckpoint;
 import me.ericfu.lynx.schema.Field;
-import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.source.SourceReader;
 
 import java.util.Random;
 
-public class RandomSourceReader implements SourceReader {
+class RandomSourceReader implements SourceReader {
 
     private static final int RAND_STRING_LENGTH = 10;
 
     private final RandomSource s;
-    private final Table table;
+    private final RandomSourceTable table;
     private final int end;
     private int current;
 
@@ -26,7 +25,7 @@ public class RandomSourceReader implements SourceReader {
     private Random random;
     private RandomGenerator[] generators;
 
-    public RandomSourceReader(RandomSource s, Table table, int start, int end) {
+    public RandomSourceReader(RandomSource s, RandomSourceTable table, int start, int end) {
         this.s = s;
         this.table = table;
         this.current = start;

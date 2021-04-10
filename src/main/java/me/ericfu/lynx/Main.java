@@ -10,7 +10,6 @@ import me.ericfu.lynx.pipeline.Pipeline;
 import me.ericfu.lynx.pipeline.Task;
 import me.ericfu.lynx.pipeline.TaskResult;
 import me.ericfu.lynx.schema.Schema;
-import me.ericfu.lynx.schema.SchemaUtils;
 import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.schema.convert.RecordConvertor;
 import me.ericfu.lynx.schema.convert.RecordConvertors;
@@ -86,28 +85,26 @@ public class Main {
 
         try {
             source.init();
-            sink.init();
         } catch (Exception ex) {
-            logger.error("Initialize source or sink failed", ex);
+            logger.error("Initialize data source failed", ex);
             return;
         }
-
-        /*----------------------------------------------------------
-         * Decide Schema and Types
-         *---------------------------------------------------------*/
 
         Schema sourceSchema = source.getSchema();
         logger.info("Data source schema: " + sourceSchema.toString());
 
-        Schema sinkSchema = sink.getSchema(sourceSchema);
-        logger.info("Data sink schema: " + sinkSchema.toString());
-
         try {
-            SchemaUtils.checkCompatible(sourceSchema, sinkSchema);
+            sink.init(sourceSchema);
         } catch (IncompatibleSchemaException e) {
             logger.error("Schema not compatible: {}", e.getMessage());
             return;
+        } catch (Exception ex) {
+            logger.error("Initialize data sink failed", ex);
+            return;
         }
+
+        Schema sinkSchema = sink.getSchema();
+        logger.info("Data sink schema: " + sinkSchema.toString());
 
         /*----------------------------------------------------------
          * Prepare All Tasks
@@ -122,12 +119,18 @@ public class Main {
         // Create tasks for each table in data source
         for (Table sourceTable : sourceSchema.getTables()) {
             final Table sinkTable = sinkSchema.getTable(sourceTable.getName());
-            assert sinkTable != null; // already checked
+            assert sinkTable != null; // ensured by sink
             pipelineBuilder.setCurrentTable(sinkTable.getName());
 
             // Num of tasks is determined by num of source partitions
             List<SourceReader> readers = source.createReaders(sourceTable);
-            RecordConvertor convertor = RecordConvertors.getConvertor(sourceTable.getType(), sinkTable.getType());
+            RecordConvertor convertor;
+            try {
+                convertor = RecordConvertors.create(sourceTable.getType(), sinkTable.getType());
+            } catch (IncompatibleSchemaException e) {
+                logger.error("Schema of table {} not compatible: {}", sourceTable.getName(), e.getMessage());
+                return;
+            }
 
             int count = 0;
             for (SourceReader reader : readers) {

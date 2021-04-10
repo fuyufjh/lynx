@@ -7,7 +7,7 @@ import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.data.RecordBatchBuilder;
 import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.checkpoint.SourceCheckpoint;
-import me.ericfu.lynx.schema.type.StructType;
+import me.ericfu.lynx.schema.type.TupleType;
 import me.ericfu.lynx.source.SourceReader;
 
 import java.io.BufferedInputStream;
@@ -15,10 +15,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-public class TextSourceReader implements SourceReader {
+class TextSourceReader implements SourceReader {
 
     private final TextSource s;
-    private final StructType type;
+    private final TupleType type;
 
     /**
      * file must be a normal file, not a directory
@@ -29,7 +29,7 @@ public class TextSourceReader implements SourceReader {
     private TextValueReader valueReader;
     private RecordBatchBuilder builder;
 
-    public TextSourceReader(TextSource s, StructType type, File file) {
+    public TextSourceReader(TextSource s, TupleType type, File file) {
         this.s = s;
         this.type = type;
         this.file = file;

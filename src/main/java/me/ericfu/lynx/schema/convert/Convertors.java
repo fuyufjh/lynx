@@ -1,9 +1,9 @@
 package me.ericfu.lynx.schema.convert;
 
 import javafx.util.Pair;
+import me.ericfu.lynx.exception.IncompatibleSchemaException;
 import me.ericfu.lynx.schema.type.BasicType;
 
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,11 +46,15 @@ public abstract class Convertors {
      *
      * @param from source type
      * @param to   target type
-     * @return a convertor as required, or null if this kind of conversion not supported
+     * @return required convertor
+     * @throws IncompatibleSchemaException if such conversion is not supported
      */
-    @Nullable
-    public static Convertor getConvertor(BasicType from, BasicType to) {
-        return convertors.get(new Pair<>(from, to));
+    public static Convertor getConvertor(BasicType from, BasicType to) throws IncompatibleSchemaException {
+        Convertor convertor = convertors.get(new Pair<>(from, to));
+        if (convertor == null) {
+            throw new IncompatibleSchemaException("cannot convert " + from + " to " + to);
+        }
+        return convertor;
     }
 
     private static void register(BasicType from, BasicType to, Convertor convertor) {

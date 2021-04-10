@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class JdbcSourceReader implements SourceReader {
+class JdbcSourceReader implements SourceReader {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcSourceReader.class);
 

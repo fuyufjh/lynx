@@ -17,7 +17,7 @@ public class TupleType implements RecordType {
      */
     private final List<Field> fields;
 
-    TupleType(List<Field> fields) {
+    public TupleType(List<Field> fields) {
         this.fields = ImmutableList.copyOf(fields);
     }
 
