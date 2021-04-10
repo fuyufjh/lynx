@@ -9,7 +9,7 @@ import me.ericfu.lynx.schema.SchemaBuilder;
 import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.schema.type.BasicType;
 import me.ericfu.lynx.schema.type.StructType;
-import me.ericfu.lynx.source.SchemalessSource;
+import me.ericfu.lynx.source.Source;
 import me.ericfu.lynx.source.SourceReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TextSource implements SchemalessSource {
+public class TextSource implements Source {
 
     private static final Logger logger = LoggerFactory.getLogger(TextSource.class);
 

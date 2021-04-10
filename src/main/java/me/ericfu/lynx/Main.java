@@ -14,11 +14,9 @@ import me.ericfu.lynx.schema.SchemaUtils;
 import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.schema.convert.RecordConvertor;
 import me.ericfu.lynx.schema.convert.RecordConvertors;
-import me.ericfu.lynx.sink.SchemalessSink;
 import me.ericfu.lynx.sink.Sink;
 import me.ericfu.lynx.sink.SinkFactory;
 import me.ericfu.lynx.sink.SinkWriter;
-import me.ericfu.lynx.source.SchemalessSource;
 import me.ericfu.lynx.source.Source;
 import me.ericfu.lynx.source.SourceFactory;
 import me.ericfu.lynx.source.SourceReader;
@@ -98,27 +96,10 @@ public class Main {
          * Decide Schema and Types
          *---------------------------------------------------------*/
 
-        Schema sourceSchema;
-        Schema sinkSchema;
-        if (source instanceof SchemalessSource && sink instanceof SchemalessSink) {
-            logger.error("At least one of source or sink should be with schema");
-            return;
-        } else if (source instanceof SchemalessSource) {
-            logger.info("Data source is schemaless. Provide schema of sink to it");
-            sinkSchema = sink.getSchema();
-            ((SchemalessSource) source).provideSchema(sinkSchema);
-            sourceSchema = source.getSchema();
-        } else if (sink instanceof SchemalessSink) {
-            logger.info("Data sink is schemaless. Provide schema of source to it");
-            sourceSchema = source.getSchema();
-            ((SchemalessSink) sink).provideSchema(sourceSchema);
-            sinkSchema = sink.getSchema();
-        } else {
-            sourceSchema = source.getSchema();
-            sinkSchema = sink.getSchema();
-        }
-
+        Schema sourceSchema = source.getSchema();
         logger.info("Data source schema: " + sourceSchema.toString());
+
+        Schema sinkSchema = sink.getSchema(sourceSchema);
         logger.info("Data sink schema: " + sinkSchema.toString());
 
         try {

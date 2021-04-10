@@ -78,7 +78,7 @@ public class JdbcSink implements Sink {
     }
 
     @Override
-    public Schema getSchema() {
+    public Schema getSchema(Schema source) {
         return schema;
     }
 

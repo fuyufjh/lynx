@@ -4,7 +4,7 @@ import me.ericfu.lynx.exception.DataSinkException;
 import me.ericfu.lynx.model.conf.GeneralConf;
 import me.ericfu.lynx.schema.Schema;
 import me.ericfu.lynx.schema.Table;
-import me.ericfu.lynx.sink.SchemalessSink;
+import me.ericfu.lynx.sink.Sink;
 import me.ericfu.lynx.sink.SinkWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TextSink implements SchemalessSink {
+public class TextSink implements Sink {
 
     private static final Logger logger = LoggerFactory.getLogger(TextSink.class);
 
@@ -53,12 +53,8 @@ public class TextSink implements SchemalessSink {
     }
 
     @Override
-    public void provideSchema(Schema schema) throws IncompatibleClassChangeError {
+    public Schema getSchema(Schema schema) {
         this.schema = schema;
-    }
-
-    @Override
-    public Schema getSchema() {
         return schema;
     }
 

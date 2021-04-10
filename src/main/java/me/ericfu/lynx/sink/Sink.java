@@ -11,7 +11,7 @@ public interface Sink {
     /**
      * Get schema. Should be invoked after initialized
      */
-    Schema getSchema();
+    Schema getSchema(Schema sourceSchema) throws IncompatibleClassChangeError;
 
     SinkWriter createWriter(Table table);
 }
