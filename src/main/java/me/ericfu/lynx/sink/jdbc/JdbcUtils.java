@@ -1,7 +1,7 @@
 package me.ericfu.lynx.sink.jdbc;
 
 import me.ericfu.lynx.data.ByteArray;
-import me.ericfu.lynx.schema.BasicType;
+import me.ericfu.lynx.schema.type.BasicType;
 
 import javax.annotation.Nullable;
 import java.sql.PreparedStatement;

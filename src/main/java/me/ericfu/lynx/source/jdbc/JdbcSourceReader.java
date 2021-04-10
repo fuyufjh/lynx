@@ -10,7 +10,7 @@ import me.ericfu.lynx.data.RecordBatchBuilder;
 import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.checkpoint.SourceCheckpoint;
 import me.ericfu.lynx.schema.Field;
-import me.ericfu.lynx.schema.RecordType;
+import me.ericfu.lynx.schema.type.StructType;
 import me.ericfu.lynx.source.SourceReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +98,7 @@ public class JdbcSourceReader implements SourceReader {
             return null;
         }
 
-        final RecordType type = split.table.getType();
+        final StructType type = split.table.getType();
         Object[] values = new Object[type.getFieldCount()];
         for (int i = 0; i < type.getFields().size(); i++) {
             switch (type.getField(i).getType()) {
@@ -134,7 +134,7 @@ public class JdbcSourceReader implements SourceReader {
             assert !rs.wasNull();
         }
 
-        return new Record(type, values);
+        return new Record(values);
     }
 
     @Override

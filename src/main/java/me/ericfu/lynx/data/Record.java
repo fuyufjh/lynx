@@ -1,22 +1,15 @@
 package me.ericfu.lynx.data;
 
 import lombok.NonNull;
-import me.ericfu.lynx.schema.RecordType;
 
 import java.util.Arrays;
 
 public class Record {
 
-    private final RecordType type; // TODO: consider remove this
     private final Object[] values;
 
-    public Record(RecordType type, @NonNull Object[] values) {
-        this.type = type;
+    public Record(@NonNull Object... values) {
         this.values = values;
-    }
-
-    public RecordType getType() {
-        return type;
     }
 
     public Object getValue(int i) {

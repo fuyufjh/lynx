@@ -2,10 +2,10 @@ package me.ericfu.lynx.source.random;
 
 import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.conf.GeneralConf;
-import me.ericfu.lynx.schema.RecordTypeBuilder;
 import me.ericfu.lynx.schema.Schema;
 import me.ericfu.lynx.schema.SchemaBuilder;
 import me.ericfu.lynx.schema.Table;
+import me.ericfu.lynx.schema.type.StructType;
 import me.ericfu.lynx.source.Source;
 import me.ericfu.lynx.source.SourceReader;
 import org.slf4j.Logger;
@@ -45,7 +45,7 @@ public class RandomSource implements Source {
     private Schema loadPredefinedSchema() {
         SchemaBuilder schema = new SchemaBuilder();
         conf.getColumns().forEach((table, columns) -> {
-            RecordTypeBuilder type = new RecordTypeBuilder();
+            StructType.Builder type = new StructType.Builder();
             columns.forEach(rule -> {
                 type.addField(rule.getName(), rule.getType());
             });

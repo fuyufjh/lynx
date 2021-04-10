@@ -4,8 +4,8 @@ import lombok.Data;
 import me.ericfu.lynx.data.RecordBatch;
 import me.ericfu.lynx.model.checkpoint.SinkCheckpoint;
 import me.ericfu.lynx.model.checkpoint.SourceCheckpoint;
-import me.ericfu.lynx.schema.RecordBatchConvertor;
-import me.ericfu.lynx.schema.RecordConvertor;
+import me.ericfu.lynx.schema.convert.RecordBatchConvertor;
+import me.ericfu.lynx.schema.convert.StructStructRecordConvertor;
 import me.ericfu.lynx.sink.SinkWriter;
 import me.ericfu.lynx.source.SourceReader;
 import org.slf4j.Logger;
@@ -32,7 +32,7 @@ public class Task implements Callable<TaskResult> {
 
     private volatile Checkpoint checkpoint = new Checkpoint();
 
-    public Task(String name, int part, SourceReader source, SinkWriter sink, RecordConvertor convertor,
+    public Task(String name, int part, SourceReader source, SinkWriter sink, StructStructRecordConvertor convertor,
                 AtomicReference<Throwable> fatalError) {
         this.name = name;
         this.part = part;

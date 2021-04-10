@@ -1,5 +1,7 @@
 package me.ericfu.lynx.schema;
 
+import me.ericfu.lynx.schema.type.BasicType;
+
 public final class Field {
 
     private final int ordinal;

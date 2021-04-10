@@ -1,4 +1,4 @@
-package me.ericfu.lynx.schema;
+package me.ericfu.lynx.schema.convert;
 
 import me.ericfu.lynx.data.Record;
 import me.ericfu.lynx.data.RecordBatch;
@@ -15,9 +15,6 @@ public class RecordBatchConvertor {
     }
 
     public RecordBatch convert(RecordBatch in) {
-        if (convertor.isIdentical()) {
-            return in;
-        }
         if (batchBuilder == null) {
             batchBuilder = new RecordBatchBuilder(in.size());
         }

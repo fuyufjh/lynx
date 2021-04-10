@@ -1,4 +1,4 @@
-package me.ericfu.lynx.schema;
+package me.ericfu.lynx.schema.convert;
 
 /**
  * Convertor converts data to some specified version

@@ -4,7 +4,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Range;
 import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.conf.GeneralConf;
-import me.ericfu.lynx.schema.*;
+import me.ericfu.lynx.schema.Schema;
+import me.ericfu.lynx.schema.SchemaBuilder;
+import me.ericfu.lynx.schema.Table;
+import me.ericfu.lynx.schema.type.BasicType;
+import me.ericfu.lynx.schema.type.StructType;
 import me.ericfu.lynx.sink.jdbc.JdbcUtils;
 import me.ericfu.lynx.source.Source;
 import me.ericfu.lynx.source.SourceReader;
@@ -87,7 +91,7 @@ public class JdbcSource implements Source {
         // Export all the columns if columns not specified in conf
         Iterable<String> columns = desc.getColumns() != null ? desc.getColumns() : columnTypes.keySet();
 
-        RecordTypeBuilder rb = new RecordTypeBuilder();
+        StructType.Builder rb = new StructType.Builder();
         for (String column : columns) {
             final BasicType type = columnTypes.get(column);
             if (type == null) {

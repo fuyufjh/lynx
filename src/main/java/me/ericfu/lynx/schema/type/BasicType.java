@@ -1,4 +1,4 @@
-package me.ericfu.lynx.schema;
+package me.ericfu.lynx.schema.type;
 
 import me.ericfu.lynx.data.ByteArray;
 
@@ -52,6 +52,6 @@ public enum BasicType {
     }
 
     public boolean isInstance(Object value) {
-        return clazz.isInstance(value);
+        return value == null || clazz.isInstance(value);
     }
 }

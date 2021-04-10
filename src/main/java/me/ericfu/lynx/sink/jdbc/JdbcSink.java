@@ -2,7 +2,12 @@ package me.ericfu.lynx.sink.jdbc;
 
 import me.ericfu.lynx.exception.DataSinkException;
 import me.ericfu.lynx.model.conf.GeneralConf;
-import me.ericfu.lynx.schema.*;
+import me.ericfu.lynx.schema.Field;
+import me.ericfu.lynx.schema.Schema;
+import me.ericfu.lynx.schema.SchemaBuilder;
+import me.ericfu.lynx.schema.Table;
+import me.ericfu.lynx.schema.type.BasicType;
+import me.ericfu.lynx.schema.type.StructType;
 import me.ericfu.lynx.sink.Sink;
 import me.ericfu.lynx.sink.SinkWriter;
 import org.slf4j.Logger;
@@ -41,7 +46,7 @@ public class JdbcSink implements Sink {
         connProps = JdbcUtils.buildConnProps(conf.getUser(), conf.getPassword(), conf.getProperties());
 
         // Fetch schema via JDBC metadata interface
-        Map<String, RecordTypeBuilder> recordTypeBuilders = new HashMap<>();
+        Map<String, StructType.Builder> recordTypeBuilders = new HashMap<>();
         try (Connection connection = DriverManager.getConnection(conf.getUrl(), connProps)) {
             // Extract schema from target table
             DatabaseMetaData meta = connection.getMetaData();
@@ -52,7 +57,7 @@ public class JdbcSink implements Sink {
                     int jdbcType = rs.getInt("DATA_TYPE");
                     BasicType dataType = JdbcUtils.convertJdbcType(jdbcType);
 
-                    RecordTypeBuilder r = recordTypeBuilders.computeIfAbsent(tableName, t -> new RecordTypeBuilder());
+                    StructType.Builder r = recordTypeBuilders.computeIfAbsent(tableName, t -> new StructType.Builder());
                     r.addField(columnName, dataType);
                 }
             }

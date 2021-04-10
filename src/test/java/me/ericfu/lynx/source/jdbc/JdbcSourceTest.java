@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static me.ericfu.lynx.schema.BasicType.*;
+import static me.ericfu.lynx.schema.type.BasicType.*;
 import static org.junit.Assert.assertEquals;
 
 public class JdbcSourceTest extends SourceTest {
@@ -121,7 +121,7 @@ public class JdbcSourceTest extends SourceTest {
 
             assertEquals(
                 Streams.mapWithIndex(Arrays.stream(RECORD), (r, i) ->
-                    new Record(null, new Object[]{(int) i, r.booleanVal, r.longVal, r.doubleVal, r.stringVal, r.binaryVal}))
+                    new Record((int) i, r.booleanVal, r.longVal, r.doubleVal, r.stringVal, r.binaryVal))
                     .collect(Collectors.toList()),
                 results.stream().map(r -> r.record).collect(Collectors.toList())
             );
@@ -136,7 +136,7 @@ public class JdbcSourceTest extends SourceTest {
 
             assertEquals(
                 Arrays.stream(RECORD).map(r ->
-                    new Record(null, new Object[]{r.booleanVal, r.intVal, r.longVal, r.doubleVal, r.stringVal, r.binaryVal}))
+                    new Record(r.booleanVal, r.intVal, r.longVal, r.doubleVal, r.stringVal, r.binaryVal))
                     .collect(Collectors.toList()),
                 results.stream().map(r -> r.record).collect(Collectors.toList())
             );

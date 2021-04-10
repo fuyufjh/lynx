@@ -3,7 +3,12 @@ package me.ericfu.lynx.source.text;
 import com.google.common.collect.ImmutableList;
 import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.conf.GeneralConf;
-import me.ericfu.lynx.schema.*;
+import me.ericfu.lynx.schema.Field;
+import me.ericfu.lynx.schema.Schema;
+import me.ericfu.lynx.schema.SchemaBuilder;
+import me.ericfu.lynx.schema.Table;
+import me.ericfu.lynx.schema.type.BasicType;
+import me.ericfu.lynx.schema.type.StructType;
 import me.ericfu.lynx.source.SchemalessSource;
 import me.ericfu.lynx.source.SourceReader;
 import org.slf4j.Logger;
@@ -35,12 +40,12 @@ public class TextSource implements SchemalessSource {
     public void provideSchema(Schema schema) {
         SchemaBuilder sb = new SchemaBuilder();
         for (Table t : schema.getTables()) {
-            RecordTypeBuilder builder = new RecordTypeBuilder();
+            StructType.Builder builder = new StructType.Builder();
             for (Field field : t.getType().getFields()) {
                 // Always provide strings regardless of the requested type
                 builder.addField(field.getName(), BasicType.STRING);
             }
-            RecordType type = builder.build();
+            StructType type = builder.build();
             sb.addTable(new Table(t.getName(), type));
         }
         this.schema = sb.build();

@@ -9,10 +9,10 @@ import me.ericfu.lynx.pipeline.Checkpointer;
 import me.ericfu.lynx.pipeline.Pipeline;
 import me.ericfu.lynx.pipeline.Task;
 import me.ericfu.lynx.pipeline.TaskResult;
-import me.ericfu.lynx.schema.RecordConvertor;
 import me.ericfu.lynx.schema.Schema;
 import me.ericfu.lynx.schema.SchemaUtils;
 import me.ericfu.lynx.schema.Table;
+import me.ericfu.lynx.schema.convert.StructStructRecordConvertor;
 import me.ericfu.lynx.sink.SchemalessSink;
 import me.ericfu.lynx.sink.Sink;
 import me.ericfu.lynx.sink.SinkFactory;
@@ -145,7 +145,7 @@ public class Main {
 
             // Num of tasks is determined by num of source partitions
             List<SourceReader> readers = source.createReaders(sourceTable);
-            RecordConvertor convertor = new RecordConvertor(sourceTable.getType(), sinkTable.getType());
+            StructStructRecordConvertor convertor = new StructStructRecordConvertor(sourceTable.getType(), sinkTable.getType());
 
             int count = 0;
             for (SourceReader reader : readers) {

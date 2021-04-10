@@ -1,13 +1,17 @@
-package me.ericfu.lynx.schema;
+package me.ericfu.lynx.schema.convert;
 
 import javafx.util.Pair;
+import me.ericfu.lynx.schema.type.BasicType;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-import static me.ericfu.lynx.schema.BasicType.*;
+import static me.ericfu.lynx.schema.type.BasicType.*;
 
+/**
+ * Collections of Convertors
+ */
 public abstract class Convertors {
 
     private static final Convertor IDENTICAL = v -> v;
