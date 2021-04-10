@@ -19,15 +19,15 @@ public class RandomSourceConf implements SourceConf {
     private int records = 10000;
 
     /**
-     * Generation rule of columns for each table (optional)
+     * Generation rule of columns for each table
      * <p>
      * If a columns presented in sink schema but not presented here, a default generation rule will be chosen.
      */
     @NotEmpty
-    private Map<String, List<RandomRule>> columns;
+    private Map<String, List<ColumnSpec>> tables;
 
     @Data
-    public static class RandomRule {
+    public static class ColumnSpec {
 
         /**
          * Column name

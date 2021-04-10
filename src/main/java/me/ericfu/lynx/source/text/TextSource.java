@@ -1,6 +1,5 @@
 package me.ericfu.lynx.source.text;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import me.ericfu.lynx.exception.DataSourceException;
 import me.ericfu.lynx.model.conf.GeneralConf;
@@ -71,8 +70,7 @@ public class TextSource implements Source {
      * @param root the file or root folder
      * @return table (named according to the directory or file name) and the files associated with it
      */
-    @VisibleForTesting
-    Map<String, Collection<File>> findAllFiles(File root) throws DataSourceException, IOException {
+    private Map<String, Collection<File>> findAllFiles(File root) throws DataSourceException, IOException {
         if (root.isDirectory()) {
             // Scan all files under this dir (exclude dot files)
             File[] files = root.listFiles((dir, name) -> !name.startsWith("."));

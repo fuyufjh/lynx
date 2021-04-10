@@ -11,6 +11,7 @@ import me.ericfu.lynx.schema.type.StructType;
 import me.ericfu.lynx.sink.jdbc.JdbcUtils;
 import me.ericfu.lynx.source.Source;
 import me.ericfu.lynx.source.SourceReader;
+import me.ericfu.lynx.source.SourceUtils;
 import me.ericfu.lynx.source.jdbc.JdbcSourceConf.TableDesc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,7 +175,7 @@ public class JdbcSource implements Source {
     @VisibleForTesting
     static List<Range<Long>> buildSplitRanges(long min, long max, int parts) {
         List<Range<Long>> ranges = new ArrayList<>(parts);
-        long[] quantiles = accumulate(split(max - min, parts));
+        long[] quantiles = SourceUtils.quantiles(max - min, parts);
         for (int i = 0; i < parts; i++) {
             Range<Long> range;
             if (i == 0) {
@@ -250,33 +251,5 @@ public class JdbcSource implements Source {
         boolean isSplittable() {
             return splitKey != null;
         }
-    }
-
-    /**
-     * Split number X into N parts such that difference between the smallest and the largest part is minimum
-     * <p>
-     * For example, given X = 10 and N = 3, the output is [3, 3, 4]
-     * <p>
-     * TODO: duplicate in RandomSource
-     *
-     * @param x total number X
-     * @param n number of parts N
-     * @return the best split results
-     */
-    private static long[] split(long x, int n) {
-        long[] result = new long[n];
-        long r = n - (x % n);
-        long d = x / n;
-        for (int i = 0; i < n; i++) {
-            result[i] = i >= r ? d + 1 : d;
-        }
-        return result;
-    }
-
-    private static long[] accumulate(long[] values) {
-        for (int i = 1; i < values.length; i++) {
-            values[i] += values[i - 1];
-        }
-        return values;
     }
 }

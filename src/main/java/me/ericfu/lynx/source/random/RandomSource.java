@@ -7,6 +7,7 @@ import me.ericfu.lynx.schema.Table;
 import me.ericfu.lynx.schema.type.StructType;
 import me.ericfu.lynx.source.Source;
 import me.ericfu.lynx.source.SourceReader;
+import me.ericfu.lynx.source.SourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,7 @@ public class RandomSource implements Source {
      */
     private Schema loadPredefinedSchema() {
         Schema.Builder schema = new Schema.Builder();
-        conf.getColumns().forEach((table, columns) -> {
+        conf.getTables().forEach((table, columns) -> {
             StructType.Builder type = new StructType.Builder();
             columns.forEach(rule -> {
                 type.addField(rule.getName(), rule.getType());
@@ -56,37 +57,11 @@ public class RandomSource implements Source {
     @Override
     public List<SourceReader> createReaders(Table table) {
         assert table instanceof RandomSourceTable;
-        int[] cut = accumulate(split(conf.getRecords(), globals.getThreads()));
+        long[] cut = SourceUtils.quantiles(conf.getRecords(), globals.getThreads());
         return IntStream.range(0, globals.getThreads()).mapToObj(i -> {
-            int start = i > 0 ? cut[i - 1] : 0;
-            int end = cut[i];
+            long start = i > 0 ? cut[i - 1] : 0;
+            long end = cut[i];
             return new RandomSourceReader(this, (RandomSourceTable) table, start, end);
         }).collect(Collectors.toList());
-    }
-
-    /**
-     * Split number X into N parts such that difference between the smallest and the largest part is minimum
-     * <p>
-     * For example, given X = 10 and N = 3, the output is [3, 3, 4]
-     *
-     * @param x total number X
-     * @param n number of parts N
-     * @return the best split results
-     */
-    private static int[] split(int x, int n) {
-        int[] result = new int[n];
-        int r = n - (x % n);
-        int d = x / n;
-        for (int i = 0; i < n; i++) {
-            result[i] = i >= r ? d + 1 : d;
-        }
-        return result;
-    }
-
-    private static int[] accumulate(int[] values) {
-        for (int i = 1; i < values.length; i++) {
-            values[i] += values[i - 1];
-        }
-        return values;
     }
 }

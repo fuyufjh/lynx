@@ -18,14 +18,14 @@ class RandomSourceReader implements SourceReader {
 
     private final RandomSource s;
     private final RandomSourceTable table;
-    private final int end;
-    private int current;
+    private final long end;
+    private long current;
 
     private RecordBatchBuilder builder;
     private Random random;
     private RandomGenerator[] generators;
 
-    public RandomSourceReader(RandomSource s, RandomSourceTable table, int start, int end) {
+    public RandomSourceReader(RandomSource s, RandomSourceTable table, long start, long end) {
         this.s = s;
         this.table = table;
         this.current = start;
@@ -43,8 +43,8 @@ class RandomSourceReader implements SourceReader {
 
             // Find the matched column rule and read the rule code
             String code = null;
-            if (s.conf.getColumns() != null) {
-                for (RandomSourceConf.RandomRule r : s.conf.getColumns().get(table.getName())) {
+            if (s.conf.getTables() != null) {
+                for (RandomSourceConf.ColumnSpec r : s.conf.getTables().get(table.getName())) {
                     if (r.getName().equals(field.getName())) {
                         if (r.getRule() != null) {
                             code = r.getRule();
@@ -126,6 +126,6 @@ class RandomSourceReader implements SourceReader {
 
     @Data
     public static class Checkpoint implements SourceCheckpoint {
-        private int nextRowNum;
+        private long nextRowNum;
     }
 }

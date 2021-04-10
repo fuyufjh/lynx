@@ -16,13 +16,13 @@ class RandomGeneratorCompiler {
     private static final Logger logger = LoggerFactory.getLogger(RandomGenerator.class);
 
     private static final String EXPR_TEMPLATE =
-        "public ${RETURN_TYPE} generate(int rownum, java.util.Random rand) { return ${EXPRESSION}; }";
+        "public ${RETURN_TYPE} generate(long rownum, java.util.Random rand) { return ${EXPRESSION}; }";
 
     private static final String RETURN_TYPE = "${RETURN_TYPE}";
     private static final String EXPRESSION = "${EXPRESSION}";
 
     private static final String CODE_BLOCK_TEMPLATE =
-        "public ${RETURN_TYPE} generate(int rownum, java.util.Random rand) ${CODE_BLOCK}";
+        "public ${RETURN_TYPE} generate(long rownum, java.util.Random rand) ${CODE_BLOCK}";
 
     private static final String CODE_BLOCK = "${CODE_BLOCK}";
 
@@ -45,12 +45,13 @@ class RandomGeneratorCompiler {
             classBody = EXPR_TEMPLATE.replace(EXPRESSION, code).replace(RETURN_TYPE, returnType.getName());
         }
 
-        logger.debug("Class body of '" + code + "': " + classBody);
+        logger.debug("Class body of '{}':\n{}", code, classBody);
 
         try {
             evaluator.cook(classBody);
         } catch (CompileException e) {
-            throw new DataSourceException("cannot compile random expression: " + code, e);
+            throw new DataSourceException("cannot compile random expression: " + code +
+                ", class body is:\n" + classBody, e);
         }
 
         try {
