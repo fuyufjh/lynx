@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
  * All the input fields must be contained in the output type, then it will convert each presented field with
  * field convertor, and set those field not presented as null
  */
-public class StructStructRecordConvertor implements RecordConvertor {
+class StructStructRecordConvertor implements RecordConvertor {
 
     private final StructType from;
     private final StructType to;

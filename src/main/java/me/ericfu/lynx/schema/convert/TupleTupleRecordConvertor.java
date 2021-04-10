@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
  * <p>
  * The input and output tuple must be of same size, then it will convert each field with field convertor
  */
-public class TupleTupleRecordConvertor implements RecordConvertor {
+class TupleTupleRecordConvertor implements RecordConvertor {
 
     private final TupleType from;
     private final TupleType to;
